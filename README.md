@@ -1,6 +1,6 @@
 # school_forum
 
-A new Flutter school forum.
+A new Flutter school_forum.
 
 ## Getting Started
 
