@@ -2,10 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:school_forum/components/myButtons.dart';
 import 'package:school_forum/components/myTextField.dart';
 
-class Loginpage extends StatelessWidget {
-  TextEditingController emailController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
+class Loginpage extends StatefulWidget {
+
   Loginpage({super.key});
+
+  @override
+  State<Loginpage> createState() => _LoginpageState();
+}
+
+class _LoginpageState extends State<Loginpage> {
+  TextEditingController emailController = TextEditingController();
+
+  TextEditingController passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {

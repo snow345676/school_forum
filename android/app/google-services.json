@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "465566948631",
+    "project_id": "school-forum-113e9",
+    "storage_bucket": "school-forum-113e9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:465566948631:android:b73f625ba275899c59ab52",
+        "android_client_info": {
+          "package_name": "com.ucstt.school_forum"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-5v9-KgKs6g2R7DoLVepDRfVRGdYB0es"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
