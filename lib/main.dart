@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:school_forum/Authentication/LoginPage.dart';
+import 'package:school_forum/screens/home_screen.dart';
 import 'package:school_forum/screens/splash_screen.dart';
 
 void main() {
@@ -19,8 +20,9 @@ class MyApp extends StatelessWidget {
 
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+
       ),
-      home: const SplashScreen(),
+      home: HomeScreen(),
     );
   }
 }

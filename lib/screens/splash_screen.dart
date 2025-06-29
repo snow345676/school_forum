@@ -29,7 +29,7 @@ class _FlatState extends State<SplashScreen> {
           children: [
             Icon( Icons.school,size: 200),
             SizedBox(height: 150),
-            SpinKitThreeInOut.
+            SpinKitThreeInOut
         (
               size: 40.0,
 
