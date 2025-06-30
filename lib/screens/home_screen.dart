@@ -1,6 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:school_forum/screens/profile.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,6 +13,17 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  //current log in user
+  User? currentUser = FirebaseAuth.instance.currentUser;
+
+
+  //fetch user details
+  Future<DocumentSnapshot<Map<String,dynamic>>> getUserDetails() async {
+    return await FirebaseFirestore.instance
+        .collection("users")
+        .doc(currentUser!.email)
+        .get();
+  }
   double value = 0;
 
   @override
@@ -67,7 +81,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ListTile(
                           onTap: () {},
                           leading: Icon(Icons.person, color: Colors.white),
-                          title: Text("Profile", style: TextStyle(color: Colors.white)),
+                          title: GestureDetector(
+                            onTap: () {},
+                              child: Text("Profile", style: TextStyle(color: Colors.white))),
                         ),
                         ListTile(
                           onTap: () {},

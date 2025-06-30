@@ -1,15 +1,11 @@
 
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:school_forum/Authentication/Auth.dart';
-import 'package:school_forum/Authentication/LoginPage.dart';
-import 'package:school_forum/Authentication/RegisterPage.dart';
 import 'package:school_forum/Authentication/toggleAuth.dart';
 import 'package:school_forum/Theme/darkMode.dart';
 import 'package:school_forum/firebase_options.dart';
-import 'package:school_forum/screens/profile.dart';
 import 'package:school_forum/screens/splash_screen.dart';
+
 
 import 'Theme/lightMode.dart';
 
@@ -28,7 +24,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'School Forum',
       debugShowCheckedModeBanner: false,
-      home: toggle(),
+      home: SplashScreen(),
       theme: lightMode,
       darkTheme: darkMode,
       // routes: {
