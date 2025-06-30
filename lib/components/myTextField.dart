@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class myTextField extends StatelessWidget {
+
 final String hintText;
 final bool obscureText;
 final TextEditingController controller;

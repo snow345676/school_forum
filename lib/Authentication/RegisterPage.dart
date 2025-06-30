@@ -1,11 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../components/myButtons.dart';
-import '../components/myTextField.dart';
-import '../helper/helper.dart';
+import 'package:school_forum/components/myButtons.dart';
+import 'package:school_forum/components/myTextField.dart';
+import 'package:school_forum/helper/helper.dart';
 
 class RegisterPage extends StatefulWidget {
   final void Function()? onTap;
+
   const RegisterPage({super.key, required this.onTap});
 
   @override
@@ -13,221 +14,123 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final List<String> year = [
-    'First Year',
-    'Second Year',
-    'Third Year',
-    'Fourth Year',
-    'Fifth Year'
-  ];
-  String? selectedYear;
-  String? selectedGender;
-
-  final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
 
-  void registerUser ()  async {
-    //show loading circle
-  showDialog(
+  String? selectedGender;
+  String? selectedYear;
+
+  void register() async {
+    showDialog(
       context: context,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      )
-  );
-    //make sure password match
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
 
-    if(passwordController.text != confirmPasswordController.text) {
+    if (passwordController.text != confirmPasswordController.text) {
       Navigator.pop(context);
-      //show error message to user
-      displayMessageToUser("Password don't match",context);
+      displayMessageToUser("Passwords do not match", context);
+      return;
     }
-    //try creating the user
+
     try {
-      //create user
-     UserCredential? userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-         email: emailController.text.trim(),
-         password: passwordController.text.trim());
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
 
-  //pop loading circle
-     Navigator.pop(context);
-    } on
-      FirebaseAuthException catch (e) {
-        //pop loading circle
-    
       Navigator.pop(context);
+      print("Registration success");
+    } on FirebaseAuthException catch (e) {
+      Navigator.pop(context);
+      displayMessageToUser(e.code, context);
     }
-
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: Center(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(25.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.school, size: 100),
-                Text(
-                  "School Net",
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 20),
+          padding: const EdgeInsets.all(25),
+          child: Column(
+            children: [
+              const Icon(Icons.school, size: 150),
+              const SizedBox(height: 20),
+              const Text("School Net", style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
 
-                // Name
-                myTextField(
-                  hintText: "Name",
-                  obscureText: false,
-                  controller: nameController,
-                ),
-                SizedBox(height: 20),
+              myTextField(hintText: "Username", obscureText: false, controller: usernameController),
+              const SizedBox(height: 10),
+              myTextField(hintText: "Email", obscureText: false, controller: emailController),
+              const SizedBox(height: 10),
 
-                // Email
-                myTextField(
-                  hintText: "Email",
-                  obscureText: false,
-                  controller: emailController,
-                ),
-                SizedBox(height: 20),
-                // Phone
-              TextField(
-                controller: phoneController,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10)
+              // Gender Radio
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Radio<String>(
+                        value: "Male",
+                        groupValue: selectedGender,
+                        onChanged: (value) => setState(() => selectedGender = value),
+                      ),
+                      const Text("Male"),
+                    ],
                   ),
-                  hintText: "Phone",
-                ),
-                obscureText: false,
-                keyboardType: TextInputType.phone,
+                  const SizedBox(width: 20), // spacing
+                  Row(
+                    children: [
+                      Radio<String>(
+                        value: "Female",
+                        groupValue: selectedGender,
+                        onChanged: (value) => setState(() => selectedGender = value),
+                      ),
+                      const Text("Female"),
+                    ],
+                  ),
+                ],
               ),
 
-                SizedBox(height: 20),
 
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: RadioListTile<String>(
-                            title: Text('Male'),
-                            value: 'Male',
-                            groupValue: selectedGender,
-                            onChanged: (value) {
-                              setState(() {
-                                selectedGender = value;
-                              });
-                            },
-                          ),
-                        ),
-                        Expanded(
-                          child: RadioListTile<String>(
-                            title: Text('Female'),
-                            value: 'Female',
-                            groupValue: selectedGender,
-                            onChanged: (value) {
-                              setState(() {
-                                selectedGender = value;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              const SizedBox(height: 10),
 
+              // Year Dropdown
+              DropdownButtonFormField<String>(
+                value: selectedYear,
+                hint: const Text("Select Year"),
+                items: ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"]
+                    .map((year) => DropdownMenuItem(value: year, child: Text(year)))
+                    .toList(),
+                onChanged: (value) => setState(() => selectedYear = value),
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+              ),
 
-                // Year Dropdown
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    contentPadding: EdgeInsets.all(17.0),
+              const SizedBox(height: 10),
+
+              myTextField(hintText: "Password", obscureText: true, controller: passwordController),
+              const SizedBox(height: 10),
+              myTextField(hintText: "Confirm Password", obscureText: true, controller: confirmPasswordController),
+
+              const SizedBox(height: 20),
+              myButtons(text: "Register", onTap: register),
+
+              const SizedBox(height: 20),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Already have an account?"),
+                  GestureDetector(
+                    onTap: widget.onTap,
+                    child: const Text(" Login Now", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
                   ),
-                  items: year.map((year) {
-                    return DropdownMenuItem(value: year, child: Text(year));
-                  }).toList(),
-                  value: selectedYear,
-                  hint: Text("Choose year"),
-                  onChanged: (newValue) {
-                    setState(() {
-                      selectedYear = newValue;
-                    });
-                  },
-                  validator: (value) =>
-                  value == null ? "Please select your year" : null,
-                ),
-                SizedBox(height: 10),
-
-                // Password
-                myTextField(
-                  hintText: "Password",
-                  obscureText: true,
-                  controller: passwordController,
-                ),
-                SizedBox(height: 10),
-
-                // Confirm Password
-                myTextField(
-                  hintText: "Confirm password",
-                  obscureText: true,
-                  controller: confirmPasswordController,
-                ),
-                SizedBox(height: 10),
-
-                // Forgot Password
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      "Forgot password",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-
-                // Register Button
-                myButtons(
-                  text: "Register",
-                  onTap: () {
-                    if (passwordController.text !=
-                        confirmPasswordController.text) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text("Passwords do not match"),
-                      ));
-                      return;
-                    }
-
-                    // Registration logic here...
-                  },
-                ),
-                SizedBox(height: 15),
-
-                // Go to Login
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Already have an account?"),
-                    GestureDetector(
-                      onTap: widget.onTap,
-                      child: Text(
-                        "  Login Now",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.blue),
-                      ),
-                    ),
-                  ],
-                )
-              ],
-            ),
+                ],
+              )
+            ],
           ),
         ),
       ),

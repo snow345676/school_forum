@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class myButtons extends StatelessWidget {
   final String text;
   final void Function()? onTap;
+
   const myButtons({
     required this.text,
     required this.onTap,
