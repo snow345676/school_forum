@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:school_forum/screens/chat_screen.dart';
+import 'package:school_forum/screens/friend_request.dart';
+import 'package:school_forum/screens/news_feed_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+// Import your external ProfilePage here:
+import 'package:school_forum/screens/profile_page.dart';
+
+import 'add_post_page.dart'; // <-- Adjust the path!
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,14 +19,42 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  double value = 0;
+  double drawerValue = 0;
+  int _selectedIndex = 0;
+  bool _showProfile = false;
+
+  final List<Widget> _pages = [
+    NewsFeedPage(),
+    ProfilePage(),
+    AddPostPage(),
+   ChatPage(),
+    FriendRequestPage(),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSelectedTab();
+  }
+
+  Future<void> _loadSelectedTab() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _selectedIndex = prefs.getInt('selectedTab') ?? 0;
+    });
+  }
+
+  Future<void> _saveSelectedTab(int index) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('selectedTab', index);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Gradient
+          // Background
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -31,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // Navigation Menu
+          // Drawer
           SafeArea(
             child: Container(
               width: 200.0,
@@ -57,25 +94,44 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Expanded(
-                    child: ListView(
+                    child: Column(
                       children: [
-                        ListTile(
-                          onTap: () {},
-                          leading: Icon(Icons.home, color: Colors.white),
-                          title: Text("Home", style: TextStyle(color: Colors.white)),
+                        Expanded(
+                          child: ListView(
+                            children: [
+                              ListTile(
+                                onTap: () {
+                                  setState(() {
+                                    drawerValue = 0;
+                                    _selectedIndex = 0;
+                                    _showProfile = false;
+                                  });
+                                  _saveSelectedTab(0);
+                                },
+                                leading: Icon(Icons.home, color: Colors.white),
+                                title: Text("Home", style: TextStyle(color: Colors.white)),
+                              ),
+                              ListTile(
+                                onTap: () {
+                                  setState(() {
+                                    drawerValue = 0;
+                                    _showProfile = true;
+                                  });
+                                },
+                                leading: Icon(Icons.person, color: Colors.white),
+                                title: Text("Profile", style: TextStyle(color: Colors.white)),
+                              ),
+                              ListTile(
+                                onTap: () => Navigator.pop(context),
+                                leading: Icon(Icons.settings, color: Colors.white),
+                                title: Text("Settings", style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
                         ),
+                        Divider(color: Colors.white54),
                         ListTile(
-                          onTap: () {},
-                          leading: Icon(Icons.person, color: Colors.white),
-                          title: Text("Profile", style: TextStyle(color: Colors.white)),
-                        ),
-                        ListTile(
-                          onTap: () {},
-                          leading: Icon(Icons.settings, color: Colors.white),
-                          title: Text("Settings", style: TextStyle(color: Colors.white)),
-                        ),
-                        ListTile(
-                          onTap: () {},
+                          onTap: () => Navigator.pop(context),
                           leading: Icon(Icons.logout_sharp, color: Colors.white),
                           title: Text("Log Out", style: TextStyle(color: Colors.white)),
                         ),
@@ -87,9 +143,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // Animated Main Content
+          // Main App Content with Profile Overlay
           TweenAnimationBuilder(
-            tween: Tween<double>(begin: 0, end: value),
+            tween: Tween<double>(begin: 0, end: drawerValue),
             duration: Duration(milliseconds: 300),
             builder: (_, double val, __) {
               return Transform(
@@ -100,9 +156,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ..rotateY((pi / 6) * val),
                 child: GestureDetector(
                   onTap: () {
-                    if (value == 1) {
+                    if (drawerValue == 1) {
                       setState(() {
-                        value = 0;
+                        drawerValue = 0;
                       });
                     }
                   },
@@ -118,48 +174,77 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icon(Icons.menu),
                           onPressed: () {
                             setState(() {
-                              value = value == 0 ? 1 : 0;
+                              drawerValue = drawerValue == 0 ? 1 : 0;
                             });
                           },
                         ),
                       ),
-                      body: Center(child: Text("Welcome to School Net")),
+                      body: Stack(
+                        children: [
+                          IndexedStack(
+                            index: _selectedIndex,
+                            children: _pages,
+                          ),
+                          if (_showProfile)
+                            Positioned.fill(
+                              child: Container(
+                                color: Colors.white,
+                                child: Column(
+                                  children: [
+                                    AppBar(
+                                      title: Text("Your Profile"),
+                                      backgroundColor: Colors.cyan,
+                                      automaticallyImplyLeading: false,
+                                      actions: [
+                                        IconButton(
+                                          icon: Icon(Icons.close),
+                                          onPressed: () {
+                                            setState(() {
+                                              _showProfile = false;
+                                            });
+                                          },
+                                        )
+                                      ],
+                                    ),
+                                    Expanded(child: ProfilePage()),  // <-- External ProfilePage
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                       bottomNavigationBar: Container(
                         color: Colors.white,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 15.0,vertical: 20),
+                          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 20),
                           child: GNav(
+                            selectedIndex: _selectedIndex,
+                            onTabChange: (index) {
+                              if (index == 1) {
+                                setState(() {
+                                  _showProfile = true;
+                                });
+                              } else {
+                                setState(() {
+                                  _selectedIndex = index;
+                                  _showProfile = false;
+                                  _saveSelectedTab(index);
+                                });
+                              }
+                            },
                             tabBorderRadius: 16,
                             gap: 8,
-                            onTabChange: (index){
-                              print(index);
-                            },
                             backgroundColor: Colors.white,
                             color: Colors.black,
                             activeColor: Colors.cyan,
                             tabBackgroundColor: Colors.cyan.shade100,
                             padding: EdgeInsets.symmetric(horizontal: 15, vertical: 12),
                             tabs: const [
-                              GButton(
-                                  icon: Icons.home,
-                                  text: 'Home'
-                              ),
-                              GButton(
-                                  icon: Icons.person,
-                                  text: 'Profile'
-                              ),
-                              GButton(
-                                  icon: Icons.add_box,
-                                  text: 'Add post'
-                              ),
-                              GButton(
-                                  icon: Icons.chat_bubble_sharp,
-                                  text: 'Chat'
-                              ),
-                              GButton(
-                                  icon: Icons.favorite_border,
-                                  text: 'Add Fri'
-                              ),
+                              GButton(icon: Icons.home, text: 'Home'),
+                              GButton(icon: Icons.person, text: 'Profile'),
+                              GButton(icon: Icons.add_box, text: 'Add post'),
+                              GButton(icon: Icons.chat_bubble_sharp, text: 'Chat'),
+                              GButton(icon: Icons.favorite_border, text: 'Add Fri'),
                             ],
                           ),
                         ),
@@ -171,15 +256,11 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
 
-          // Gesture Detector for Swiping
+          // Swipe Gesture
           GestureDetector(
             onHorizontalDragUpdate: (e) {
               setState(() {
-                if (e.delta.dx > 0) {
-                  value = 1;
-                } else if (e.delta.dx < 0) {
-                  value = 0;
-                }
+                drawerValue = e.delta.dx > 0 ? 1 : 0;
               });
             },
           )

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:school_forum/Authentication/LoginPage.dart';
 import 'package:school_forum/screens/home_screen.dart';
+import 'package:school_forum/screens/profile_page.dart';
 import 'package:school_forum/screens/splash_screen.dart';
 
 void main() {
