@@ -19,7 +19,7 @@ class _FlatState extends State<SplashScreen> {
     super.initState();
     Future.delayed(const Duration(seconds: 5)).then((value) {
       Navigator.of(context).pushReplacement(
-        CupertinoPageRoute(builder: (context) => const toggle()),
+        CupertinoPageRoute(builder: (context) => const auth()),
       );
     });
   }

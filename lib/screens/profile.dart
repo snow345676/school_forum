@@ -21,87 +21,124 @@ class _ProfilePictureWidgetState extends State<ProfilePictureWidget> {
     loadProfileImage();
   }
 
-  //Load saved profile image from Firestore
+  // Load saved profile image from Firestore
   Future<void> loadProfileImage() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    try {
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('uid', isEqualTo: uid)
+          .get();
 
-    final snapshot = await FirebaseFirestore.instance.collection('users').where('uid', isEqualTo: uid).get();
-    if (snapshot.docs.isNotEmpty) {
-      setState(() {
-        imageUrl = snapshot.docs.first['profileImage'] ?? '';
-      });
+      if (snapshot.docs.isNotEmpty) {
+        final data = snapshot.docs.first.data();
+        if (data.containsKey('profileImage')) {
+          setState(() {
+            imageUrl = data['profileImage'];
+          });
+        }
+      }
+    } catch (e) {
+      print("Error loading profile image: $e");
     }
   }
 
-  //Pick, crop, and upload
+  // Pick and crop image
   Future<void> pickImage() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
-    if (pickedFile != null) {
-      CroppedFile? croppedFile = await ImageCropper().cropImage(
-        sourcePath: pickedFile.path,
-        cropStyle: CropStyle.circle,
-        aspectRatioPresets: [
-          CropAspectRatioPreset.square,
-        ],
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Crop Profile Image',
-            toolbarColor: Colors.cyan,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: true,
-          ),
-        ],
+    if (pickedFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("No image selected")),
       );
+      return;
+    }
 
-      if (croppedFile != null) {
-        await uploadToFirebase(File(croppedFile.path));
-      }
+    CroppedFile? croppedFile = await ImageCropper().cropImage(
+      sourcePath: pickedFile.path,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop Profile Image',
+          toolbarColor: Colors.cyan,
+          toolbarWidgetColor: Colors.white,
+          lockAspectRatio: true,
+        ),
+        IOSUiSettings(
+          title: 'Crop Profile Image',
+          aspectRatioLockEnabled: true,
+        ),
+      ],
+    );
+
+    if (croppedFile != null) {
+      await uploadToFirebase(File(croppedFile.path));
     }
   }
 
-  // ☁️ Upload to Firebase Storage
+  // Upload to Firebase Storage
   Future<void> uploadToFirebase(File file) async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    final ref = FirebaseStorage.instance.ref().child('profile_images/$uid.jpg');
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
 
-    await ref.putFile(file);
-    String downloadURL = await ref.getDownloadURL();
+    try {
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+      final ref = FirebaseStorage.instance.ref().child('profile_images/$uid.jpg');
 
-    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-      'profileImage': downloadURL,
-    });
+      await ref.putFile(file);
+      String downloadURL = await ref.getDownloadURL();
 
-    setState(() {
-      imageUrl = downloadURL;
-    });
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'profileImage': downloadURL,
+      });
+
+      setState(() {
+        imageUrl = downloadURL;
+      });
+    } catch (e) {
+      print("Upload error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Upload failed: $e")),
+      );
+    } finally {
+      Navigator.pop(context); // remove loading dialog
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Stack(
-        children: [
-          CircleAvatar(
-            radius: 60,
-            backgroundImage: imageUrl.isNotEmpty
-                ? NetworkImage(imageUrl)
-                : NetworkImage('https://cdn-icons-png.flaticon.com/512/149/149071.png'),
-          ),
-          Positioned(
-            bottom: 0,
-            right: 4,
-            child: GestureDetector(
-              onTap: pickImage,
-              child: CircleAvatar(
-                radius: 18,
-                backgroundColor: Colors.cyan,
-                child: Icon(Icons.add, color: Colors.white),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Profile'),
+        backgroundColor: Colors.cyan,
+        
+      ),
+      body: Center(
+        child: Stack(
+          children: [
+            CircleAvatar(
+              radius: 60,
+              backgroundImage: imageUrl.isNotEmpty
+                  ? NetworkImage(imageUrl)
+                  : NetworkImage('https://cdn-icons-png.flaticon.com/512/149/149071.png'),
+            ),
+            Positioned(
+              bottom: 0,
+              right: 4,
+              child: GestureDetector(
+                onTap: pickImage,
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Colors.cyan,
+                  child: Icon(Icons.add, color: Colors.white),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
