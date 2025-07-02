@@ -38,7 +38,7 @@ class _ProfilePictureWidgetState extends State<ProfilePictureWidget> {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
-      File? croppedFile = await ImageCropper().cropImage(
+      CroppedFile? croppedFile = await ImageCropper().cropImage(
         sourcePath: pickedFile.path,
         cropStyle: CropStyle.circle,
         aspectRatioPresets: [

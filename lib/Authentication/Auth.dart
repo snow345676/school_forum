@@ -20,7 +20,7 @@ class _authState extends State<auth> {
             //user is log in
 
             if(snapshot.hasData) {
-              return profile();
+              return ProfilePictureWidget();
             } else {
               //user is not log in
 

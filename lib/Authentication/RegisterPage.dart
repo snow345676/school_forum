@@ -56,7 +56,7 @@ class _RegisterPageState extends State<RegisterPage> {
       print("Registration success");
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) =>profile()),
+        MaterialPageRoute(builder: (context) =>ProfilePictureWidget()),
       );
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);

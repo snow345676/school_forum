@@ -44,7 +44,7 @@ class _LoginpageState extends State<Loginpage> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) =>profile()),
+        MaterialPageRoute(builder: (context) =>ProfilePictureWidget()),
       );
       //display any error
     } on FirebaseAuthException catch (e) {
