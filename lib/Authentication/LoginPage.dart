@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:school_forum/components/myButtons.dart';
 import 'package:school_forum/components/myTextField.dart';
 import 'package:school_forum/helper/helper.dart';
-import 'package:school_forum/screens/home_screen.dart';
 import 'package:school_forum/screens/profile.dart';
 
 class Loginpage extends StatefulWidget {
@@ -45,7 +44,7 @@ class _LoginpageState extends State<Loginpage> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) =>HomeScreen()),
+        MaterialPageRoute(builder: (context) =>profile()),
       );
       //display any error
     } on FirebaseAuthException catch (e) {

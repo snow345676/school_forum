@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:school_forum/screens/profile.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,23 +13,66 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  //current log in user
-  User? currentUser = FirebaseAuth.instance.currentUser;
+  String userName='';
+  String email='';
+  String gender='';
+  String phone='';
+  String rno='';
+  String year='';
+  @override
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getUserDetail ();
+  }
+
+  Future<void> getUserDetail() async {
+    try {
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+
+
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection("users")
+          .where("uid", isEqualTo: uid)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        var userDoc = querySnapshot.docs.first;
+
+
+        setState(() {
+          userName = userDoc['username'] ?? '';
+          email = userDoc['email'] ?? '';
+          phone = userDoc['phone'] ?? '';
+          gender = userDoc['gender'] ?? '';
+          rno = userDoc['rollNumber'] ?? '';
+          year = userDoc['year'] ?? '';
+        });
+      } else {
+        print("User not found in Firestore");
+        setState(() {
+          userName = "Not found";
+        });
+      }
+    } catch (e) {
+      print("Error fetching user data: $e");
+    }
+  }
+
 
 
   //fetch user details
-  Future<DocumentSnapshot<Map<String,dynamic>>> getUserDetails() async {
-    return await FirebaseFirestore.instance
-        .collection("users")
-        .doc(currentUser!.email)
-        .get();
-  }
+
+
   double value = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
+      body:
+      Stack(
         children: [
           // Background Gradient
           Container(
@@ -64,7 +107,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         SizedBox(height: 10.0),
                         Text(
-                          "Chit Snow",
+                          userName
+                          ,
                           style: TextStyle(color: Colors.white, fontSize: 20.0),
                         ),
                       ],
@@ -139,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                         ),
                       ),
-                      body: Center(child: Text("Welcome to School Net")),
+                      body: Center(child: Text("Welcome to $userName")),
                       bottomNavigationBar: Container(
                         color: Colors.white,
                         child: Padding(
