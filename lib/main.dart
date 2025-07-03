@@ -1,17 +1,13 @@
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:school_forum/Authentication/toggleAuth.dart';
-import 'package:school_forum/Theme/darkMode.dart';
-import 'package:school_forum/firebase_options.dart';
+import 'package:school_forum/Authentication/LoginPage.dart';
+import 'package:school_forum/screens/home_screen.dart';
+import 'package:school_forum/screens/profile_page.dart';
 import 'package:school_forum/screens/splash_screen.dart';
-
-
-import 'Theme/lightMode.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -24,15 +20,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'School Forum',
       debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
-      theme: lightMode,
-      darkTheme: darkMode,
-      // routes: {
-      //   "/auth" : (context) => auth(),
-      //   "/profile": (context) => profile()
-      // },
-    );
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
 
+      ),
+      home: SplashScreen(),
+    );
   }
 }
 

@@ -3,6 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:school_forum/screens/chat_screen.dart';
+import 'package:school_forum/screens/friend_request.dart';
+import 'package:school_forum/screens/news_feed_page.dart';
+import 'package:school_forum/screens/profile_page.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -118,24 +122,44 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: ListView(
                       children: [
                         ListTile(
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.of(context).push(
+                                MaterialPageRoute(builder: (context) => const HomeScreen())
+                            );
+                          },
                           leading: Icon(Icons.home, color: Colors.white),
                           title: Text("Home", style: TextStyle(color: Colors.white)),
                         ),
                         ListTile(
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(builder: (context) => const ProfilePage())
+                            );
+                          },
                           leading: Icon(Icons.person, color: Colors.white),
                           title: GestureDetector(
-                            onTap: () {},
+                              onTap: () {
+                                Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute(builder: (context) => const NewsFeedPage())
+                                );
+                              },
                               child: Text("Profile", style: TextStyle(color: Colors.white))),
                         ),
                         ListTile(
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(builder: (context) => const ChatPage())
+                            );
+                          },
                           leading: Icon(Icons.settings, color: Colors.white),
                           title: Text("Settings", style: TextStyle(color: Colors.white)),
                         ),
                         ListTile(
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(builder: (context) => const FriendRequestPage())
+                            );
+                          },
                           leading: Icon(Icons.logout_sharp, color: Colors.white),
                           title: Text("Log Out", style: TextStyle(color: Colors.white)),
                         ),
@@ -203,6 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               GButton(
                                   icon: Icons.home,
                                   text: 'Home'
+
                               ),
                               GButton(
                                   icon: Icons.person,

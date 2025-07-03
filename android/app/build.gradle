@@ -6,12 +6,12 @@ plugins {
 }
 
 android {
-    namespace = "com.ucstt.school_forum"
-    compileSdk = 35
+    namespace = "com.ucstt.school_forum"  // <-- your app package namespace
+    compileSdk = 35                       // latest compileSdk version
 
     defaultConfig {
-        applicationId = "com.ucstt.school_forum"
-        minSdk = 23
+        applicationId = "com.ucstt.school_forum"  // must match namespace
+        minSdk = 23                               // minSdk 23+ required by Firebase Auth
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
