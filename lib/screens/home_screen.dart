@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _pages = [
     NewsFeedPage(),
-    profile(),
+    ProfilePage(),
     AddPostPage(),
    ChatPage(),
     FriendRequestPage(),

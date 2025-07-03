@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:school_forum/Authentication/toggleAuth.dart';
+import 'package:school_forum/screens/home_screen.dart';
 import 'package:school_forum/screens/profile.dart';
+import 'package:school_forum/screens/profile_page.dart';
 
 class auth extends StatefulWidget {
   const auth({super.key});
@@ -20,7 +22,7 @@ class _authState extends State<auth> {
             //user is log in
 
             if(snapshot.hasData) {
-              return profile();
+              return HomeScreen();
             } else {
               //user is not log in
 
