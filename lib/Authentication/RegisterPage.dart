@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:school_forum/components/myButtons.dart';
 import 'package:school_forum/components/myTextField.dart';
 import 'package:school_forum/helper/helper.dart';
-import 'package:school_forum/screens/profile.dart';
-
-
+import 'package:school_forum/screens/home_screen.dart'; //Updated import
 
 class RegisterPage extends StatefulWidget {
   final void Function()? onTap;
@@ -41,21 +39,21 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     try {
-      //create user
       UserCredential? userCredential =
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
-      //create a user document and add to firestore
-      createUserDocument(userCredential);
+      await createUserDocument(userCredential);
 
       Navigator.pop(context);
       print("Registration success");
+
+      //  Go to HomeScreen after registration
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) =>profile()),
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
@@ -63,17 +61,16 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  //create a user document and collect them in firestore
   Future<void> createUserDocument(UserCredential? userCredential) async {
-    if(userCredential != null && userCredential.user != null) {
-      await FirebaseFirestore.instance.collection("users").doc(userCredential.user!.email).set(
-          {
-            'email': userCredential.user!.email,
-            'username': usernameController.text,
-            'rollNumber': rollNumberController.text,
-            'gender': selectedGender,
-            'year' : selectedYear
-          });
+    if (userCredential != null && userCredential.user != null) {
+      await FirebaseFirestore.instance.collection("users").doc(userCredential.user!.email).set({
+        'email': userCredential.user!.email,
+        'username': usernameController.text,
+        'rollNumber': rollNumberController.text,
+        'gender': selectedGender,
+        'year': selectedYear,
+        'phone': phoneController.text,
+      });
     }
   }
 
@@ -95,12 +92,11 @@ class _RegisterPageState extends State<RegisterPage> {
               const Text("School Net", style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
 
-              myTextField(hintText: "Username",labelText: "UserName", obscureText: false, controller: usernameController),
+              myTextField(hintText: "Username", labelText: "UserName", obscureText: false, controller: usernameController),
               const SizedBox(height: 10),
               myTextField(hintText: "Email", labelText: "Email", obscureText: false, controller: emailController),
               const SizedBox(height: 10),
 
-              // Gender Radio
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -114,7 +110,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       const Text("Male"),
                     ],
                   ),
-                  const SizedBox(width: 20), // spacing
+                  const SizedBox(width: 20),
                   Row(
                     children: [
                       Radio<String>(
@@ -128,10 +124,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 ],
               ),
 
-
               const SizedBox(height: 15),
 
-              // Year Dropdown
               DropdownButtonFormField<String>(
                 value: selectedYear,
                 hint: const Text("Select Year"),
@@ -141,22 +135,11 @@ class _RegisterPageState extends State<RegisterPage> {
                 onChanged: (value) => setState(() => selectedYear = value),
                 decoration: InputDecoration(
                   labelText: "Year",
-                  labelStyle: TextStyle(
-                      color: Colors.grey[800]
-                  ) ,
-                  hintText: "Select Year",
+                  labelStyle: TextStyle(color: Colors.grey[800]),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10), // Match TextField
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  // enabledBorder: OutlineInputBorder(
-                  //   borderRadius: BorderRadius.circular(10),
-                  //   borderSide: BorderSide(color: Colors.grey),
-                  // ),
-                  // focusedBorder: OutlineInputBorder(
-                  //   borderRadius: BorderRadius.circular(10),
-                  //   borderSide: BorderSide(color: Colors.cyan, width: 2),
-                  // ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
                 ),
               ),
 
@@ -166,44 +149,31 @@ class _RegisterPageState extends State<RegisterPage> {
                 controller: rollNumberController,
                 decoration: InputDecoration(
                   labelText: "Roll Number",
-                  labelStyle: TextStyle(
-                      color: Colors.grey[800]
-                  ) ,
+                  labelStyle: TextStyle(color: Colors.grey[800]),
                   prefixText: "UCSTT-",
-
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
               ),
+              const SizedBox(height: 10),
 
               TextField(
                 keyboardType: TextInputType.phone,
                 controller: phoneController,
                 decoration: InputDecoration(
                   labelText: "Phone",
-                  labelStyle: TextStyle(
-                      color: Colors.grey[800]
-                  ) ,
+                  labelStyle: TextStyle(color: Colors.grey[800]),
                   prefixText: "09-",
-
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
               ),
 
-
-
-
-
               const SizedBox(height: 15),
 
-              myTextField(hintText: "Password",labelText: "Password", obscureText: true, controller: passwordController),
+              myTextField(hintText: "Password", labelText: "Password", obscureText: true, controller: passwordController),
               const SizedBox(height: 15),
-              myTextField(hintText: "Confirm Password",labelText: "Confirm Password", obscureText: true, controller: confirmPasswordController),
+              myTextField(hintText: "Confirm Password", labelText: "Confirm Password", obscureText: true, controller: confirmPasswordController),
 
               const SizedBox(height: 20),
               myButtons(text: "Register", onTap: register),

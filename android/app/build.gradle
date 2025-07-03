@@ -1,38 +1,29 @@
-plugins {
-    id 'com.android.application'
-    id 'com.google.gms.google-services'    // Firebase plugin
-    id 'kotlin-android'
-    id 'dev.flutter.flutter-gradle-plugin'
-}
-
-android {
-    namespace = "com.ucstt.school_forum"
-    compileSdk = 34
-
-    defaultConfig {
-        applicationId = "com.ucstt.school_forum"
-        minSdk = 21
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
     }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
-
-    buildTypes {
-        release {
-            signingConfig signingConfigs.debug
-        }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.1'    // Use latest stable gradle plugin version
+        classpath 'com.google.gms:google-services:4.4.0'    // Firebase services plugin
     }
 }
 
-flutter {
-    source = "../.."
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
 }

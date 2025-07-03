@@ -4,6 +4,7 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:school_forum/screens/chat_screen.dart';
 import 'package:school_forum/screens/friend_request.dart';
 import 'package:school_forum/screens/news_feed_page.dart';
+import 'package:school_forum/screens/profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Import your external ProfilePage here:
@@ -25,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _pages = [
     NewsFeedPage(),
-    ProfilePage(),
+    profile(),
     AddPostPage(),
    ChatPage(),
     FriendRequestPage(),
