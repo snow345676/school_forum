@@ -1,39 +1,65 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:school_forum/posts/post.dart';
 
-class NewsFeedPage extends StatelessWidget {
+class NewsFeedPage extends StatefulWidget {
   const NewsFeedPage({super.key});
 
   @override
+  State<NewsFeedPage> createState() => _NewsFeedPageState();
+}
+
+class _NewsFeedPageState extends State<NewsFeedPage> {
+  final currentUser = FirebaseAuth.instance.currentUser;
+  final textController = TextEditingController();
+
+  @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: EdgeInsets.all(16),
-      itemCount: 10, // Replace with post list length later
-      itemBuilder: (context, index) {
-        return Card(
-          margin: EdgeInsets.only(bottom: 20),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 4,
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: NetworkImage("https://i.pravatar.cc/150?img=${index + 1}"),
-                  ),
-                  title: Text("User ${index + 1}"),
-                  subtitle: Text("Just now"),
-                ),
-                SizedBox(height: 10),
-                Text("This is a sample post content for post ${index + 1}.", style: TextStyle(fontSize: 16)),
-                SizedBox(height: 10),
-                Image.network("https://source.unsplash.com/random/800x400?sig=$index"),
-              ],
+    return Scaffold(
+      body: Center(
+        child: Column(
+          children: [
+            // Feed
+            Expanded(
+              child: StreamBuilder(
+                stream: FirebaseFirestore.instance
+                    .collection("User_Posts")
+                    .orderBy("TimeStamp", descending: false)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return ListView.builder(
+                      itemCount: snapshot.data!.docs.length,
+                      itemBuilder: (context, index) {
+                        final post = snapshot.data!.docs[index];
+
+
+                        return Post(
+                          message: post['Message'] ?? '',
+                          user: post['UserEmail'] ,
+                        );
+                      },
+                    );
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+                  return const Center(child: CircularProgressIndicator());
+                },
+              ),
             ),
-          ),
-        );
-      },
+
+            // Optional: show who is logged in
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Text(
+                "Logged in as: ${currentUser?.email ?? 'Guest'}",
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
