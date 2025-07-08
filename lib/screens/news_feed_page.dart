@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:school_forum/posts/post.dart';
 
+import '../helper/helper.dart';
+
 class NewsFeedPage extends StatefulWidget {
   const NewsFeedPage({super.key});
 
@@ -25,7 +27,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
               child: StreamBuilder(
                 stream: FirebaseFirestore.instance
                     .collection("User_Posts")
-                    .orderBy("TimeStamp", descending: false)
+                    .orderBy("Timestamp", descending: true)
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
@@ -33,11 +35,19 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                       itemCount: snapshot.data!.docs.length,
                       itemBuilder: (context, index) {
                         final post = snapshot.data!.docs[index];
+                        final timestamp = post['Timestamp'];
 
+                        String formattedTime = "Just now";
+                        if (timestamp is Timestamp) {
+                          formattedTime = formatDate(timestamp.toDate() as Timestamp);
+                        }
 
                         return Post(
                           message: post['Message'] ?? '',
                           user: post['UserEmail'] ,
+                          postId: post.id,
+                          likes: List<String>.from(post['Likes'] ?? []),
+                          time: formattedTime,
                         );
                       },
                     );

@@ -19,8 +19,9 @@ class _AddPostPageState extends State<AddPostPage> {
       // TODO: Send to Firebase
       FirebaseFirestore.instance.collection("User_Posts").add({
         'UserEmail' : currentUser?.email,
-    'Message' : _textController.text,
-    'TimeStamp' : Timestamp.now(),
+        'Message' : _textController.text,
+        'TimeStamp' : Timestamp.now(),
+        "Likes" : [],
 
        });
       print("Post submitted: $content");
