@@ -30,8 +30,15 @@ String formatDate(Timestamp timestamp){
   String day=dateTime.day.toString();
 
   //final formatted date
-  String formattedData ='$day/$month/$year';
+  String formattedDate ='$day/$month/$year';
 
-  return formattedData;
+  return formattedDate;
 
 }
+/*String formatDate(DateTime dateTime) {
+  String year = dateTime.year.toString();
+  String month = dateTime.month.toString().padLeft(2, '0');
+  String day = dateTime.day.toString().padLeft(2, '0');
+
+  return '$day/$month/$year';
+}*/

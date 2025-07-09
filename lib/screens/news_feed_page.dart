@@ -24,53 +24,38 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
           children: [
             // Feed
             Expanded(
-              child: StreamBuilder(
-                stream: FirebaseFirestore.instance
+
+              child: FutureBuilder(
+                future: FirebaseFirestore.instance
                     .collection("User_Posts")
-                    .orderBy("Timestamp", descending: true)
-                    .snapshots(),
+                    .orderBy("TimeStamp", descending: true)
+                    .get(),
                 builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return ListView.builder(
-                      itemCount: snapshot.data!.docs.length,
-                      itemBuilder: (context, index) {
-                        final post = snapshot.data!.docs[index];
-                        final timestamp = post['Timestamp'];
+                  print(snapshot.data);
+ //return Text('${snapshot.data!.docs}');
+                  final docs = snapshot.data!.docs;
 
-                        String formattedTime = "Just now";
-                        if (timestamp is Timestamp) {
-                          formattedTime = formatDate(timestamp.toDate() as Timestamp);
-                        }
-                        final docs = snapshot.data!.docs;
-                        if (docs.isEmpty) {
-                          return const Center(child: Text("No posts yet."));
-                        }
-
-                        return Post(
-                          message: post['Message'] ?? '',
-                          user: post['UserEmail'] ,
-                          postId: docs[index].id,
-                          likes: List<String>.from(post['Likes'] ?? []),
-                          time: formattedTime,
-                        );
-                      },
-                    );
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  }
-                  return const Center(child: CircularProgressIndicator());
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final post = docs[index];
+                      return Post(
+                        message: post['Message'],
+                        user: post['UserEmail'],
+                        postId: post.id,
+                        likes: List<String>.from(post['Likes'] ?? []),
+                        time: formatDate(post['TimeStamp']),
+                      );
+                    },
+                  );
                 },
               ),
             ),
 
-            // Optional: show who is logged in
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Text(
-                "Logged in as: ${currentUser?.email ?? 'Guest'}",
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
+
+
           ],
         ),
       ),

@@ -71,7 +71,7 @@ class _PostState extends State<Post> {
   }
 //add a comment
   void addComment(String commentText){
-    //write the comment to firestore under the comment collection  for this post
+    //write the comment to fire store under the comment collection  for this post
     FirebaseFirestore.instance
         .collection("User_Posts")
         .doc(widget.postId)
@@ -129,6 +129,7 @@ void showCommentDialog(){
   @override
   Widget build(BuildContext context) {
     return Container(
+      height:280,
       decoration: BoxDecoration(
         color: Colors.grey[200],
         borderRadius: BorderRadius.circular(10),
@@ -136,6 +137,7 @@ void showCommentDialog(){
       margin: const EdgeInsets.only(top: 25, left: 25 , right: 25),
       padding: const EdgeInsets.all(25),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         //new feed page
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -223,15 +225,15 @@ void showCommentDialog(){
           ),
 
           //comment under the count
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection("User_Posts").doc(widget.postId).collection("Comments").orderBy("CommentTime",descending: true).snapshots(),
+          FutureBuilder<QuerySnapshot>(
+            future: FirebaseFirestore.instance.collection("User_Posts").doc(widget.postId).collection("Comments").orderBy("CommentTime",descending: true).get(),
             builder: (context,snapshot){
 
 
               //show loading circle if no data yet
               if(!snapshot.hasData){
                 return const Center(
-                  child: CircularProgressIndicator(),
+                  child: SizedBox(),
                 );
               }
 
@@ -243,18 +245,14 @@ void showCommentDialog(){
                   final commentData = doc.data() as Map<String,dynamic>;
 
                   // return the comment widget
-                  final timestamp = commentData["CommentTime"] as Timestamp;
-                  final formattedTime = formatDate(timestamp.toDate() as Timestamp);
                   return Comment(
                     text: commentData["CommentText"],
                     user: commentData["CommentedBy"],
-                    time: formattedTime,
+                    time: formatDate(commentData["CommentTime"]),
                   );
                 }).toList(),
               );
-
-
-            },
+              },
             )
         ],
       ),
