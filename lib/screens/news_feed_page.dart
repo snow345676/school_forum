@@ -41,11 +41,15 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                         if (timestamp is Timestamp) {
                           formattedTime = formatDate(timestamp.toDate() as Timestamp);
                         }
+                        final docs = snapshot.data!.docs;
+                        if (docs.isEmpty) {
+                          return const Center(child: Text("No posts yet."));
+                        }
 
                         return Post(
                           message: post['Message'] ?? '',
                           user: post['UserEmail'] ,
-                          postId: post.id,
+                          postId: docs[index].id,
                           likes: List<String>.from(post['Likes'] ?? []),
                           time: formattedTime,
                         );

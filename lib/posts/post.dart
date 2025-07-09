@@ -136,6 +136,7 @@ void showCommentDialog(){
       margin: const EdgeInsets.only(top: 25, left: 25 , right: 25),
       padding: const EdgeInsets.all(25),
       child: Column(
+        //new feed page
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Message and username
@@ -153,9 +154,18 @@ void showCommentDialog(){
                     fontSize: 16,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 5),
 
                 //message
+                Text(
+                  widget.message,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+
                 //user,time
                 Row(
                   children: [
@@ -193,7 +203,7 @@ void showCommentDialog(){
                 ],
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(width: 10),
               //comment
               Column(
                 children: [
@@ -211,7 +221,7 @@ void showCommentDialog(){
               ),
             ],
           ),
-          
+
           //comment under the count
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance.collection("User_Posts").doc(widget.postId).collection("Comments").orderBy("CommentTime",descending: true).snapshots(),
