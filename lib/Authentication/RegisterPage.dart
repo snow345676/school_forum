@@ -5,7 +5,6 @@ import 'package:school_forum/components/myButtons.dart';
 import 'package:school_forum/components/myTextField.dart';
 import 'package:school_forum/helper/helper.dart';
 import 'package:school_forum/screens/home_screen.dart';
-import 'package:school_forum/screens/profile.dart';
 
 
 
@@ -66,19 +65,22 @@ class _RegisterPageState extends State<RegisterPage> {
 
   //create a user document and collect them in firestore
   Future<void> createUserDocument(UserCredential? userCredential) async {
-    if(userCredential != null && userCredential.user != null) {
-      await FirebaseFirestore.instance.collection("users").doc(userCredential.user!.email).set(
-          {
-            'uid' : userCredential.user!.uid,
-            'phone' : phoneController.text,
-            'email': userCredential.user!.email,
-            'username': usernameController.text,
-            'rollNumber': rollNumberController.text,
-            'gender': selectedGender,
-            'year' : selectedYear
-          });
+    if (userCredential != null && userCredential.user != null) {
+      await FirebaseFirestore.instance
+          .collection("users")
+          .doc(userCredential.user!.uid)
+          .set({
+        'uid': userCredential.user!.uid,
+        'phone': phoneController.text.trim(),
+        'email': userCredential.user!.email,
+        'username': usernameController.text.trim(),
+        'rollNumber': rollNumberController.text.trim(),
+        'gender': selectedGender,
+        'year': selectedYear,
+      });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

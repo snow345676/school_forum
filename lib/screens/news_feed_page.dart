@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:school_forum/posts/post.dart';
-
 import '../helper/helper.dart';
 
 class NewsFeedPage extends StatefulWidget {
@@ -14,7 +13,6 @@ class NewsFeedPage extends StatefulWidget {
 
 class _NewsFeedPageState extends State<NewsFeedPage> {
   final currentUser = FirebaseAuth.instance.currentUser;
-  final textController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -22,40 +20,43 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
       body: Center(
         child: Column(
           children: [
-            // Feed
             Expanded(
-
-              child: FutureBuilder(
-                future: FirebaseFirestore.instance
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
                     .collection("User_Posts")
                     .orderBy("TimeStamp", descending: true)
-                    .get(),
+                    .snapshots(),
                 builder: (context, snapshot) {
-                  print(snapshot.data);
- //return Text('${snapshot.data!.docs}');
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
                   final docs = snapshot.data!.docs;
 
                   return ListView.builder(
                     shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
+                    physics: const AlwaysScrollableScrollPhysics(),
                     itemCount: docs.length,
                     itemBuilder: (context, index) {
                       final post = docs[index];
+                      final data = post.data() as Map<String, dynamic>;
+
+                      final username = data.containsKey('username')
+                          ? data['username']
+                          : "Unknown";
+
                       return Post(
-                        message: post['Message'],
-                        user: post['UserEmail'],
+                        message: data['Message'],
+                        user: username,
                         postId: post.id,
-                        likes: List<String>.from(post['Likes'] ?? []),
-                        time: formatDate(post['TimeStamp']),
+                        likes: List<String>.from(data['Likes'] ?? []),
+                        time: formatDate(data['TimeStamp']),
                       );
                     },
                   );
                 },
               ),
             ),
-
-
-
           ],
         ),
       ),
