@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:school_forum/Authentication/toggleAuth.dart';
+import 'package:school_forum/screens/notification.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:school_forum/screens/add_post_page.dart';
 import 'package:school_forum/screens/chat_screen.dart';
@@ -29,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const NewsFeedPage(),
     const ChatScreen(),
     const AddPostPage(),
+    const NotificationPage()
   ];
 
   @override

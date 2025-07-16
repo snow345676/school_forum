@@ -232,6 +232,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             postId: post.id,
                             likes: List<String>.from(data['Likes'] ?? []),
                             time: formatDate(data['TimeStamp']),
+                            postOwnerId: post['uid'],
                           );
                         },
                       );

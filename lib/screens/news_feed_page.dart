@@ -51,6 +51,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                         postId: post.id,
                         likes: List<String>.from(data['Likes'] ?? []),
                         time: formatDate(data['TimeStamp']),
+                        postOwnerId: post['uid'],
                       );
                     },
                   );

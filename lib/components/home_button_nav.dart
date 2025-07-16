@@ -55,7 +55,7 @@ class HomeBottomNavBar extends StatelessWidget {
             GButton(icon: Icons.home, text: 'Home',),
             GButton(icon: Icons.chat_bubble, text: 'Chat'),
             GButton(icon: Icons.add_box, text: 'Add Post'),
-            GButton(icon: Icons.favorite_border, text: 'Friends'),
+            GButton(icon: Icons.favorite_border, text: 'Noti'),
           ],
         ),
       ),

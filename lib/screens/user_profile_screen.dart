@@ -183,6 +183,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       postId: docs[index].id,
                       likes: List<String>.from(data['Likes'] ?? []),
                       time: formatDate(data['TimeStamp']),
+                      postOwnerId: data['uid'],
                     );
                   },
                 );
