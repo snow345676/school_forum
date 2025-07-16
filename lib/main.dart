@@ -1,9 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:school_forum/Authentication/LoginPage.dart';
-import 'package:school_forum/screens/home_screen.dart';
-import 'package:school_forum/screens/profile_page.dart';
 import 'package:school_forum/screens/splash_screen.dart';
+
+import 'Theme/darkMode.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,13 +15,27 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Color mainColor = const Color(0xFF0C6F8B);
+    final Color lighterColor = const Color(0xFF3AA0C9);
+    final Color shadowColor = const Color(0xFF084A59);
+
     return MaterialApp(
       title: 'School Forum',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        fontFamily: 'LibertinusMath',
+        fontFamily: "libre",
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: mainColor,
+          selectionColor: lighterColor.withOpacity(0.3),
+          selectionHandleColor: mainColor,
+        ),
+        progressIndicatorTheme: ProgressIndicatorThemeData(
+          color: lighterColor,
+        ),
       ),
-      home: const SplashScreen(),
+      darkTheme: darkMode,
+      themeMode: ThemeMode.system,
+      home: SplashScreen(),
     );
   }
 }

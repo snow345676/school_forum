@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:school_forum/components/comment_button.dart';
 import 'package:school_forum/components/like_button.dart';
 
+import '../screens/user_profile_screen.dart';
 
 class Post extends StatefulWidget {
   final String message;
@@ -38,8 +39,8 @@ class _PostState extends State<Post> {
 
   @override
   void initState() {
-    fetchUsername();
     super.initState();
+    fetchUsername();
     isLiked = widget.likes.contains(currentUser.email);
     likeCount = widget.likes.length;
   }
@@ -68,7 +69,7 @@ class _PostState extends State<Post> {
     if (currentUser != null) {
       final doc = await FirebaseFirestore.instance
           .collection("users")
-          .doc(currentUser!.uid)
+          .doc(currentUser.uid)
           .get();
 
       if (doc.exists && doc.data() != null) {
@@ -105,13 +106,10 @@ class _PostState extends State<Post> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             gradient: LinearGradient(
-              colors: [
-                mainColor,lighterColor  // Lighter cyan
-              ],
+              colors: [mainColor, lighterColor],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -119,11 +117,9 @@ class _PostState extends State<Post> {
               const Text(
                 "Add Comment",
                 style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-
-                ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -152,14 +148,15 @@ class _PostState extends State<Post> {
                     },
                     child: const Text(
                       "Cancel",
-                      style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(width: 16),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: Color(0xFF0C6F8B),
+                      foregroundColor: mainColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -169,7 +166,8 @@ class _PostState extends State<Post> {
                       Navigator.pop(context);
                       _commentTextController.clear();
                     },
-                    child: const Text("Post",style: TextStyle(fontWeight: FontWeight.bold),),
+                    child: const Text("Post",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ],
               )
@@ -180,9 +178,13 @@ class _PostState extends State<Post> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
+
+    final Color mainColor = const Color(0xFF0C6F8B);
+    final Color lighterColor = const Color(0xFF3AA0C9);
+
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
       padding: const EdgeInsets.all(16),
@@ -190,115 +192,147 @@ class _PostState extends State<Post> {
         color: Colors.grey[300],
         borderRadius: BorderRadius.circular(5),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Left: Likes and Comments
 
-          Column(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              LikeButton(isLiked: isLiked, onTap: toggleLike),
-              const SizedBox(height: 4),
-              Text('$likeCount', style: const TextStyle(color: Colors.grey)),
-              const SizedBox(height: 10),
-              CommentButton(onTap: showCommentDialog),
-              const SizedBox(height: 4),
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('User_Posts')
-                    .doc(widget.postId)
-                    .collection('Comments')
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  int count = 0;
-                  if (snapshot.hasData) {
-                    count = snapshot.data!.docs.length;
-                  }
-                  return Text('$count', style: const TextStyle(color: Colors.grey));
+              GestureDetector(
+                onTap: () {
+                  FirebaseFirestore.instance
+                      .collection('User_Posts')
+                      .doc(widget.postId)
+                      .get()
+                      .then((doc) {
+                    final postData = doc.data();
+                    if (postData != null && postData['uid'] != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => UserProfilePage(userId: postData['uid']),
+                        ),
+                      );
+                    }
+                  });
                 },
+                child: Text(
+                  widget.user,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+              Text(
+                widget.time,
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
-          const SizedBox(width: 16),
 
-          // Right: User, Time, Message, Comments
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+
+          const SizedBox(height: 10),
+
+
+          Text(
+            widget.message,
+            style:TextStyle(
+                fontSize: 18,
+                color: Colors.grey[800]
+            ),
+          ),
+          const SizedBox(height: 20),
+
+
+          Center(
+            child: Row(
               children: [
-                // Username and time
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                Column(
                   children: [
-                    Text(
-                      widget.user,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 24),
-                    ),
-                    Text(
-                      widget.time,
-                      style: TextStyle(
-                          color: Colors.grey[900],
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold),
+                    LikeButton(isLiked: isLiked, onTap: toggleLike),
+                    const SizedBox(height: 2),
+                    Text('$likeCount',
+                        style: const TextStyle(color: Colors.grey,fontSize: 12)),
+                  ],
+                ),
+                const SizedBox(width: 24),
+
+
+                Column(
+                  children: [
+                    CommentButton(onTap: showCommentDialog),
+                    const SizedBox(height: 2),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('User_Posts')
+                          .doc(widget.postId)
+                          .collection('Comments')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        int count = 0;
+                        if (snapshot.hasData) {
+                          count = snapshot.data!.docs.length;
+                        }
+                        return Text('$count',
+                            style: const TextStyle(color: Colors.grey,fontSize: 12));
+                      },
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-
-                // Message
-                Text(
-                  widget.message,
-                  style: const TextStyle(fontSize: 19),
-                ),
-                const SizedBox(height: 12),
-
-                // Comment List
-                StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection("User_Posts")
-                      .doc(widget.postId)
-                      .collection("Comments")
-                      .orderBy("CommentTime", descending: true)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) return const SizedBox();
-
-                    return ListView(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: snapshot.data!.docs.map((doc) {
-                        final commentData = doc.data() as Map<String, dynamic>;
-                        final commentUser = commentData["CommentedBy"] ?? '';
-                        final commentText = commentData["CommentText"] ?? '';
-
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: "$commentUser: ",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: mainColor,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: commentText,
-                                  style:TextStyle(color: Colors.grey[700]),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    );
-
-                  },
-                ),
               ],
             ),
+          ),
+
+          const SizedBox(height: 5),
+
+
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection("User_Posts")
+                .doc(widget.postId)
+                .collection("Comments")
+                .orderBy("CommentTime", descending: true)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox();
+
+              return ListView(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: snapshot.data!.docs.map((doc) {
+                  final commentData = doc.data() as Map<String, dynamic>;
+                  final commentUser = commentData["CommentedBy"] ?? '';
+                  final commentText = commentData["CommentText"] ?? '';
+
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "$commentUser: ",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, color: mainColor),
+                          ),
+                          TextSpan(
+                            text: commentText,
+                            style:
+                            TextStyle(color: Colors.grey[700], height: 1.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
           ),
         ],
       ),

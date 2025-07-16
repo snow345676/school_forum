@@ -6,13 +6,13 @@ class TogglePage extends StatefulWidget {
   const TogglePage({super.key});
 
   @override
-  State<TogglePage> createState() => _TogglePageState();
+  State<TogglePage> createState() => TogglePageState();
 }
 
-class _TogglePageState extends State<TogglePage> {
+class TogglePageState extends State<TogglePage> {
   bool showLoginPage = true;
 
-  void togglePage() {
+  void toggleScreens() {
     setState(() {
       showLoginPage = !showLoginPage;
     });
@@ -20,8 +20,10 @@ class _TogglePageState extends State<TogglePage> {
 
   @override
   Widget build(BuildContext context) {
-    return showLoginPage
-        ? Loginpage(onTap: togglePage)
-        : RegisterPage(onTap: togglePage);
+    if (showLoginPage) {
+      return Loginpage(onTap: toggleScreens);
+    } else {
+      return RegisterPage(onTap: toggleScreens);
+    }
   }
 }

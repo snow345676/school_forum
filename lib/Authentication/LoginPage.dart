@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:school_forum/components/myButtons.dart';
 import 'package:school_forum/components/myTextField.dart';
 import 'package:school_forum/helper/helper.dart';
+import 'package:school_forum/screens/forgott_password.dart';
 
 import '../screens/home_screen.dart';
 
@@ -57,6 +58,10 @@ class _LoginpageState extends State<Loginpage> {
 
   @override
   Widget build(BuildContext context) {
+    final Color mainColor = const Color(0xFF0C6F8B);      // #0C6F8B
+    final Color lighterColor = const Color(0xFF3AA0C9);   // lighter blue for gradient
+    final Color shadowColor = const Color(0xFF084A59);
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       body: Center(
@@ -68,9 +73,9 @@ class _LoginpageState extends State<Loginpage> {
               children: [
                 // logo
                 Icon(
-                    Icons.school,
-                    size: 150,
-                    color: Theme.of(context).colorScheme.inversePrimary,
+                    Icons.mark_unread_chat_alt,
+                    size: 120,
+                    color: shadowColor,
                 ),
 
                 const SizedBox(height: 25),
@@ -79,7 +84,7 @@ class _LoginpageState extends State<Loginpage> {
                 Text(
                   "School Net",
                   style: TextStyle(
-                      fontSize: 30,
+                      fontSize: 35,
                       fontWeight: FontWeight.bold),
                 ),
 
@@ -92,7 +97,7 @@ class _LoginpageState extends State<Loginpage> {
                     obscureText: false,
                     controller: emailController),
 
-                SizedBox(height: 10),
+                SizedBox(height: 20),
 
                 // Password TextField
                 myTextField(
@@ -107,9 +112,18 @@ class _LoginpageState extends State<Loginpage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text(
-                      "Forgot Password?",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    GestureDetector(
+                      child: Text(
+                        "Forgot Password?",
+                        style: TextStyle(fontWeight: FontWeight.bold,color: shadowColor,),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ForgotPassword()),
+                        );
+                      },
+
                     ),
                   ],
                 ),
@@ -136,7 +150,7 @@ class _LoginpageState extends State<Loginpage> {
                           "  Register Now",
                           style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue),
+                              color: shadowColor),
                         ),
                       ),
                     ],

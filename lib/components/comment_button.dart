@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
      return GestureDetector(
        onTap:onTap,
        child: Icon(
-         Icons.comment_rounded,
+         Icons.comment_rounded,size: 22,
          color: Colors.grey,
        ),
      );

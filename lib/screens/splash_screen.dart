@@ -25,23 +25,26 @@ class _FlatState extends State<SplashScreen> {
   }
   @override
   Widget build(BuildContext context) {
+    final Color mainColor = const Color(0xFF4FB3C9);
+    final Color lighterColor = const Color(0xFF6BC6EF);
+    final Color shadowColor = const Color(0xFF084A59);
     return Scaffold(
       body: SizedBox(
         width: double.infinity,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon( Icons.school,size: 200),
-            SizedBox(height: 150),
+            Icon( Icons.mark_unread_chat_alt,size: 150,color: shadowColor,),
+            SizedBox(height: 100),
             SpinKitThreeInOut
         (
-              size: 35.0,
+              size: 30.0,
 
               itemBuilder: (BuildContext context, int index) {
                 return DecoratedBox(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: index.isEven ? Colors.cyan.shade100 : Colors.cyan.shade200,
+                    color: index.isEven ? lighterColor : mainColor,
                   ),
                 );
               },
@@ -55,4 +58,3 @@ class _FlatState extends State<SplashScreen> {
     );
   }
 }
-//flutter pub add flutter_spinkit
