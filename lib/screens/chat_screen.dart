@@ -1,168 +1,167 @@
-import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/material.dart';
+import 'chat_next_screen.dart';
 
 class ChatScreen extends StatefulWidget {
-  final Map selectedUser;
-
-  const ChatScreen({super.key, required this.selectedUser});
+  const ChatScreen({super.key});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
-  final TextEditingController _messageController = TextEditingController();
-  final currentUser = FirebaseAuth.instance.currentUser;
-  DatabaseReference? chatRef;
+class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
+  User? user = FirebaseAuth.instance.currentUser;
+  final CollectionReference userRef = FirebaseFirestore.instance.collection("users");
+  late DocumentReference myRef;
 
   @override
   void initState() {
     super.initState();
-    _setupChatPath();
-  }
+    WidgetsBinding.instance.addObserver(this);
 
-  void _setupChatPath() {
-    final ids = [currentUser?.uid, widget.selectedUser['uid']]
-        .whereType<String>()
-        .toList();
-
-    if (ids.length < 2) {
-      debugPrint("❌ Chat UID setup failed: one or both UIDs are null.");
-      return;
+    if (user != null) {
+      myRef = userRef.doc(user!.uid);
+      _setUserOnline();
     }
-
-    ids.sort(); // Ensure consistent path
-    final path = 'chats/${ids[0]}_${ids[1]}';
-    chatRef = FirebaseDatabase.instance.ref(path);
   }
 
-  void _sendMessage() {
-    final message = _messageController.text.trim();
-    if (message.isEmpty || chatRef == null) return;
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _setUserOffline();
+    super.dispose();
+  }
 
-    final newMessage = {
-      'sender': currentUser?.uid ?? '',
-      'text': message,
-      'timestamp': ServerValue.timestamp,
-    };
+  void _setUserOnline() {
+    if (user != null) {
+      myRef.set({"state": "online"}, SetOptions(merge: true));
+    }
+  }
 
-    chatRef!.push().set(newMessage);
-    _messageController.clear();
+  void _setUserOffline() {
+    if (user != null) {
+      myRef.set({
+        "state": "offline",
+        "last_seen": FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (user != null) {
+      if (state == AppLifecycleState.resumed) {
+        _setUserOnline();
+      } else {
+        _setUserOffline();
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final name = widget.selectedUser['name'] ?? 'No Name';
-    final photoUrl = widget.selectedUser['photoUrl'] ??
-        'https://www.pngplay.com/wp-content/uploads/12/User-Avatar-Profile-PNG-Photos.png';
+    print("CURRENT USER: ${FirebaseAuth.instance.currentUser}");
 
-    return SafeArea(
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            color: Colors.cyan.shade50,
-            child: Row(
-              children: [
-                const BackButton(),
-                CircleAvatar(backgroundImage: NetworkImage(photoUrl)),
-                const SizedBox(width: 8),
-                Text(name, style: const TextStyle(fontSize: 16)),
-              ],
-            ),
-          ),
+    return Scaffold(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: userRef.snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            //  Don't filter by userId field, just use doc.id
+            final users = snapshot.data!.docs.where((doc) {
+              return doc.id != user!.uid; // skip yourself
+            }).toList();
 
-          // Chat unavailable message
-          if (chatRef == null)
-            const Expanded(
-              child: Center(
-                child: Text(
-                  "Chat is unavailable.\nMissing user information.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            )
-          else
-          // Message Stream
-            Expanded(
-              child: StreamBuilder(
-                stream: chatRef!.orderByChild('timestamp').onValue,
-                builder: (context, snapshot) {
-                  if (snapshot.hasData &&
-                      snapshot.data!.snapshot.value != null) {
-                    final data = Map<String, dynamic>.from(
-                        snapshot.data!.snapshot.value as Map);
-                    final messages = data.values
-                        .map((e) => Map<String, dynamic>.from(e))
-                        .toList()
-                      ..sort((a, b) =>
-                          (b['timestamp'] ?? 0).compareTo(a['timestamp'] ?? 0));
+            if (users.isEmpty) {
+              return const Center(child: Text("No other users found"));
+            }
 
-                    return ListView.builder(
-                      reverse: true,
-                      itemCount: messages.length,
-                      itemBuilder: (context, index) {
-                        final msg = messages[index];
-                        final isMe = msg['sender'] == currentUser?.uid;
-                        return Align(
-                          alignment: isMe
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(
-                                vertical: 4, horizontal: 8),
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 14),
-                            decoration: BoxDecoration(
-                              color: isMe
-                                  ? Colors.cyan.shade100
-                                  : Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(12),
+            return ListView.builder(
+              itemCount: users.length,
+              itemBuilder: (context, index) {
+                final eachUserData = users[index].data() as Map<String, dynamic>;
+
+                //  doc.id is the other user UID
+                final otherId = users[index].id;
+
+                //  Create chatPath using sorted UIDs
+                final List<String> ids = [user!.uid, otherId]..sort();
+                final chatPath = '${ids[0]}_${ids[1]}';
+
+                return StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection("chats")
+                      .doc(chatPath)
+                      .collection("messages")
+                      .orderBy("timestamp", descending: true)
+                      .limit(1)
+                      .snapshots(),
+                  builder: (context, chatSnapshot) {
+                    String lastMessage = '';
+                    if (chatSnapshot.hasData &&
+                        chatSnapshot.data!.docs.isNotEmpty) {
+                      final msg = chatSnapshot.data!.docs.first.data()
+                      as Map<String, dynamic>;
+                      lastMessage = msg['text'] ?? '';
+                    }
+
+                    return ListTile(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => ChatNextScreen(
+                              selectedUser: {
+                                ...eachUserData,
+                                "uid": otherId, // pass UID too
+                              },
                             ),
-                            child: Text(msg['text'] ?? ''),
                           ),
                         );
                       },
-                    );
-                  } else {
-                    return const Center(child: Text("No messages yet."));
-                  }
-                },
-              ),
-            ),
-
-          // Message Input
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: "Type a message...",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
+                      leading: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          CircleAvatar(
+                            backgroundImage: NetworkImage(
+                              eachUserData['photoUrl'] ??
+                                  'https://sl.bing.net/b5Z2jTtlUKy',
+                            ),
+                          ),
+                          if (eachUserData['state'] == 'online')
+                            Container(
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.green,
+                              ),
+                              width: 12,
+                              height: 12,
+                            ),
+                        ],
                       ),
-                      contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: Colors.cyan,
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white),
-                    onPressed: _sendMessage,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+                      title: Text(eachUserData['username'] ?? 'Unknown'),
+                      subtitle: lastMessage.startsWith('http')
+                          ? Align(
+                        alignment: Alignment.centerLeft,
+                        child: Image.network(
+                          lastMessage,
+                          width: 20,
+                          height: 20,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                          : Text(lastMessage),
+                    );
+                  },
+                );
+              },
+            );
+          } else if (snapshot.hasError) {
+            return Center(child: Text(snapshot.error.toString()));
+          } else {
+            return const Center(child: CircularProgressIndicator());
+          }
+        },
       ),
     );
   }

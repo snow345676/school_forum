@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
     NewsFeedPage(),
     ProfilePage(),
     AddPostPage(),
-   ChatScreen(selectedUser: {}),
+    ChatScreen(),
     FriendRequestPage(),
   ];
 

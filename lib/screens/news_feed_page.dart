@@ -32,7 +32,7 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                     .get(),
                 builder: (context, snapshot) {
                   print(snapshot.data);
- //return Text('${snapshot.data!.docs}');
+// return Text('${snapshot.data!.docs}');
                   final docs = snapshot.data!.docs;
 
                   return ListView.builder(

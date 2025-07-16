@@ -75,7 +75,8 @@ class _RegisterPageState extends State<RegisterPage> {
             'username': usernameController.text,
             'rollNumber': rollNumberController.text,
             'gender': selectedGender,
-            'year' : selectedYear
+            'year' : selectedYear,
+            'photoUrl' :userCredential.user!.photoURL,
           });
     }
   }
