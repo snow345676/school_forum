@@ -2,15 +2,13 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:school_forum/Authentication/toggleAuth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
-
 import 'package:school_forum/screens/add_post_page.dart';
 import 'package:school_forum/screens/chat_screen.dart';
-import 'package:school_forum/screens/friend_request.dart';
 import 'package:school_forum/screens/news_feed_page.dart';
 import 'package:school_forum/screens/profile_page.dart';
-
+import '../Theme/darkMode.dart';
 import '../components/3d_appbar.dart';
 import '../components/home_button_nav.dart';
 
@@ -29,10 +27,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _pages = [
     const NewsFeedPage(),
-    // Placeholder for Profile navigation handled separately
+    const ChatScreen(),
     const AddPostPage(),
-    ChatScreen(),
-    const FriendRequestPage(),
   ];
 
   @override
@@ -47,6 +43,38 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _selectedIndex = prefs.getInt('selectedTab') ?? 0;
     });
+  }
+
+  void logout(BuildContext context) async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => TogglePage()),
+          (route) => false,
+    );
+  }
+
+  void confirmLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Log out"),
+        content: const Text("Are you sure you want to log out?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              logout(context);
+            },
+            child: const Text("Log Out"),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _saveSelectedTab(int index) async {
@@ -87,30 +115,29 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background gradient behind drawer
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Colors.cyan.shade50,
-                  Colors.cyan.shade100,
-                ],
+                colors: [lighterColor],
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
               ),
             ),
           ),
-
-          // Drawer content (left menu)
           SafeArea(
             child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [lighterColor, mainColor],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                ),
+              ),
               width: 200.0,
-              color: Colors.cyan.shade700,
               padding: const EdgeInsets.all(8.0),
               child: Column(
                 children: [
                   DrawerHeader(
-                    decoration: const BoxDecoration(color: Colors.cyan),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -118,10 +145,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           radius: 40.0,
                           backgroundImage: NetworkImage("https://sl.bing.net/dZztI9XLI6K"),
                         ),
-                        const SizedBox(height: 10.0),
+                        const SizedBox(height: 15.0),
                         Text(
                           userName ?? "Loading...",
-                          style: const TextStyle(color: Colors.white, fontSize: 20.0),
+                          style: const TextStyle(color: Colors.white, fontSize: 15.0),
                         ),
                       ],
                     ),
@@ -136,7 +163,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 onTap: () {
                                   setState(() {
                                     drawerValue = 0;
-                                    _selectedIndex = 0;
                                   });
                                   _saveSelectedTab(0);
                                 },
@@ -163,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const Divider(color: Colors.white54),
                         ListTile(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => confirmLogout(context),
                           leading: const Icon(Icons.logout_sharp, color: Colors.white),
                           title: const Text("Log Out", style: TextStyle(color: Colors.white)),
                         ),
@@ -174,8 +200,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-
-          // Main content with 3D transform & gradient background
           TweenAnimationBuilder(
             tween: Tween<double>(begin: 0, end: drawerValue),
             duration: const Duration(milliseconds: 300),
@@ -183,9 +207,9 @@ class _HomeScreenState extends State<HomeScreen> {
               return Transform(
                 alignment: Alignment.center,
                 transform: Matrix4.identity()
-                  ..setEntry(3, 2, 0.001) // perspective
-                  ..setEntry(0, 3, 200 * val) // horizontal translation
-                  ..rotateY((pi / 6) * val), // rotation
+                  ..setEntry(3, 2, 0.001)
+                  ..setEntry(0, 3, 200 * val)
+                  ..rotateY((pi / 6) * val),
                 child: GestureDetector(
                   onTap: () {
                     if (drawerValue == 1) {
@@ -239,17 +263,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         bottomNavigationBar: HomeBottomNavBar(
                           selectedIndex: _selectedIndex,
                           onTabChange: (index) {
-                            if (index == 1) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const ProfilePage()),
-                              );
-                            } else {
-                              setState(() {
-                                _selectedIndex = index;
-                                _saveSelectedTab(index);
-                              });
-                            }
+                            setState(() {
+                              _selectedIndex = index;
+                              _saveSelectedTab(index);
+                            });
                           },
                         ),
                       ),
@@ -259,8 +276,6 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
-
-          // Gesture to drag open/close drawer
           GestureDetector(
             onHorizontalDragUpdate: (e) {
               setState(() {

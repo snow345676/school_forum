@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../Theme/darkMode.dart';
 
 class AddPostPage extends StatefulWidget {
   const AddPostPage({super.key});
@@ -43,11 +44,11 @@ class _AddPostPageState extends State<AddPostPage> {
     if (uid == null) return;
 
     try {
-      // Fetch the user's name from Firestore
+
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
       final username = userDoc.data()?['username'] ?? "Unknown";
 
-      // Post with username
+
       await FirebaseFirestore.instance.collection("User_Posts").add({
         'uid': uid,
         'username': username,
@@ -73,35 +74,51 @@ class _AddPostPageState extends State<AddPostPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text("Create a Post",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _textController,
-            maxLines: 5,
-            decoration: InputDecoration(
-              hintText: "What's on your mind?",
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text("Create a Post",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _textController,
+              maxLines: 5,
+              decoration: InputDecoration(
+                hintText: "What's on your mind?",
+                hintStyle:TextStyle(color: Colors.grey[700]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(5),
+                  borderSide: BorderSide(color: shadowColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(5),
+                  borderSide: BorderSide(color: shadowColor, width: 2),
+                ),
+                contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: _submitPost,
-            icon: const Icon(Icons.send),
-            label: const Text("Post"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.cyan,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _submitPost,
+              icon: const Icon(Icons.send,size: 22,color: Colors.white,),
+              label: const Text("Post",style: TextStyle(color: Colors.white,fontSize: 18),),
+
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),),
+                backgroundColor: mainColor,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

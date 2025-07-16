@@ -18,6 +18,8 @@ class _ProfilePageState extends State<ProfilePage> {
   bool isLoading = true;
   String? error;
   final currentUser = FirebaseAuth.instance.currentUser;
+  final photoUrl = FirebaseAuth.instance.currentUser?.photoURL ??
+      'https://www.gravatar.com/avatar/placeholder';
 
   @override
   void initState() {
@@ -73,7 +75,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Profile')),
+        appBar: AppBar(title: const Text('Profile', style: TextStyle(fontSize: 20))),
         body: Center(child: Text(error!)),
       );
     }
@@ -82,7 +84,7 @@ class _ProfilePageState extends State<ProfilePage> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Gradient Header with Back + Profile
+          // Header
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -92,23 +94,22 @@ class _ProfilePageState extends State<ProfilePage> {
                 end: Alignment.bottomRight,
               ),
               borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
+                bottomLeft: Radius.circular(35),
+                bottomRight: Radius.circular(35),
               ),
             ),
-            padding: const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
+            padding: const EdgeInsets.only(top: 40, left: 10, right: 20, bottom: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-
               children: [
-                // Back + Title
+                // Top Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+                          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
                           onPressed: () {
                             Navigator.pushReplacement(
                               context,
@@ -116,58 +117,71 @@ class _ProfilePageState extends State<ProfilePage> {
                             );
                           },
                         ),
+                        const SizedBox(width: 30),
                         const Text(
                           'Profile',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 25,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
-
-                    Column(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.settings, color: Colors.white, size: 28),
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => SettingPage()),
-                            );
-                          },
-                        ),
-                      ],
+                    IconButton(
+                      icon: const Icon(Icons.settings, color: Colors.white, size: 28),
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SettingPage()),
+                        );
+                      },
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 20),
-                // Avatar and username
+
+
                 Center(
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+
+                      // Profile Picture
                       CircleAvatar(
                         radius: 42,
-                        backgroundColor: Colors.grey.shade300,
-                        child: Icon(Icons.person, size: 60, color: mainColor),
+                        backgroundColor: Colors.white,
+                        backgroundImage: NetworkImage(photoUrl),
                       ),
-                      const SizedBox(height: 10,width: 30,),
+
+                      const SizedBox(width: 30),
+
+                      // Username info
                       Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+
                           Text(
                             userData!['username'] ?? 'No Name',
                             style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold),
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
+                          const SizedBox(height: 5),
                           Text(
-                            'UCSTT ${userData!['rollNumber'] ?? "N/A"} | ${userData!['year'] ?? "Year Unknown"}  ',
-                            style: const TextStyle(color: Colors.white,fontWeight: FontWeight.bold),
+                            'UCSTT ${userData!['rollNumber'] ?? "N/A"} | ${userData!['year'] ?? "Year Unknown"}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
+
 
                     ],
                   ),
@@ -176,13 +190,15 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
 
-          // User details
+
+
+          const SizedBox(height: 10),
+
+          // Posts
           Expanded(
             child: SingleChildScrollView(
               child: Column(
                 children: [
-
-                  // User Posts
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection("User_Posts")
@@ -225,28 +241,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class ProfileDetailRow extends StatelessWidget {
-  final String title;
-  final String value;
-  const ProfileDetailRow(this.title, this.value, {super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Expanded(
-              flex: 2,
-              child: Text(title,
-                  style: const TextStyle(fontWeight: FontWeight.bold))),
-          Expanded(flex: 3, child: Text(value)),
         ],
       ),
     );

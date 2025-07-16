@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class Custom3DAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -15,21 +16,22 @@ class Custom3DAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final photoUrl = FirebaseAuth.instance.currentUser?.photoURL ??
+        'https://www.gravatar.com/avatar/placeholder';
+
     final Color mainColor = const Color(0xFF0C6F8B);      // #0C6F8B
-    final Color lighterColor = const Color(0xFF3AA0C9);   // lighter blue for gradient
-    final Color shadowColor = const Color(0xFF084A59);
+    final Color lighterColor = const Color(0xFF3AA0C9);   // lighter blue
+    final Color shadowColor = const Color(0xFF084A59);    // shadow color
 
     return Material(
       elevation: 5,
-
       child: Container(
         decoration: BoxDecoration(
-        gradient: LinearGradient(
-        colors: [mainColor, lighterColor],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-    ),
-
+          gradient: LinearGradient(
+            colors: [mainColor, lighterColor],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           boxShadow: [
             BoxShadow(
               color: shadowColor.withOpacity(0.6),
@@ -46,23 +48,25 @@ class Custom3DAppBar extends StatelessWidget implements PreferredSizeWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.white,size: 30,),
+                  icon: const Icon(Icons.menu, color: Colors.white, size: 30),
                   onPressed: onMenuPressed,
                   tooltip: 'Menu',
                 ),
                 Text(
                   'School Net',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontSize: 25,
+                    fontSize: 23,
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.person, color: Colors.white ,size: 30,),
-                  onPressed: onProfilePressed,
-                  tooltip: 'Profile',
+                GestureDetector(
+                  onTap: onProfilePressed,
+                  child: CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white,
+                    backgroundImage: NetworkImage(photoUrl),
+                  ),
                 ),
               ],
             ),
