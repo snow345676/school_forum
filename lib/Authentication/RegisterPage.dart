@@ -138,7 +138,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: CircleAvatar(
                   radius: 50,
                   backgroundImage: avatarImage,
-                  child: avatarImage == null ? Icon(Icons.person, size: 70,color: shadowColor ,) : null,
+                  child: avatarImage == null ? Icon(Icons.person, size: 80,color: shadowColor ,) : null,
                 ),
               ),
               const SizedBox(height: 18),
@@ -194,6 +194,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     children: [
                       Radio<String>(
                         value: "Female",
+                        activeColor: shadowColor,
                         groupValue: selectedGender,
                         onChanged: (value) =>
                             setState(() => selectedGender = value),
@@ -403,7 +404,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: Text(
                       "Login here",
                       style: TextStyle(
-                          color: mainColor, fontWeight: FontWeight.bold),
+                          color: shadowColor, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],

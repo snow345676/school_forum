@@ -47,7 +47,7 @@ class Custom3DAppBar extends StatelessWidget implements PreferredSizeWidget {
               color: shadowColor.withOpacity(0.6),
               offset: const Offset(0, 3),
               blurRadius: 2,
-              spreadRadius: 1,
+              spreadRadius: 0,
             ),
           ],
         ),

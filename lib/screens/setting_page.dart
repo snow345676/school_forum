@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -16,17 +15,18 @@ class _SettingPageState extends State<SettingPage> {
   final currentUser = FirebaseAuth.instance.currentUser;
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers for editable fields
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  final TextEditingController addressController = TextEditingController();
   final TextEditingController yearController = TextEditingController();
   final TextEditingController rollNumberController = TextEditingController();
 
   bool isLoading = true;
   String? error;
   String? avatarBase64;
+
+  final Color mainColor = const Color(0xFF0C6F8B);
+  final Color shadowColor = const Color(0xFF084A59);
 
   @override
   void initState() {
@@ -46,7 +46,6 @@ class _SettingPageState extends State<SettingPage> {
         usernameController.text = data['username'] ?? '';
         emailController.text = data['email'] ?? '';
         phoneController.text = data['phone'] ?? '';
-        addressController.text = data['address'] ?? '';
         yearController.text = data['year'] ?? '';
         rollNumberController.text = data['rollNumber'] ?? '';
         avatarBase64 = data['avatar_base64'] ?? '';
@@ -66,21 +65,33 @@ class _SettingPageState extends State<SettingPage> {
   Future<void> updateUserData() async {
     if (_formKey.currentState!.validate()) {
       try {
+        final newUsername = usernameController.text.trim();
+
+        // Update user document
         await FirebaseFirestore.instance
             .collection('users')
             .doc(currentUser!.uid)
             .update({
-          'username': usernameController.text,
-          'email': emailController.text,
-          'phone': phoneController.text,
-          'address': addressController.text,
-          'year': yearController.text,
-          'rollNumber': rollNumberController.text,
+          'username': newUsername,
+          'email': emailController.text.trim(),
+          'phone': phoneController.text.trim(),
+          'year': yearController.text.trim(),
+          'rollNumber': rollNumberController.text.trim(),
           'avatar_base64': avatarBase64 ?? '',
         });
 
+        // Update all user posts with new username
+        final postsSnapshot = await FirebaseFirestore.instance
+            .collection('User_Posts')
+            .where('uid', isEqualTo: currentUser!.uid)
+            .get();
+
+        for (final doc in postsSnapshot.docs) {
+          await doc.reference.update({'UserEmail': newUsername});
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully')),
+          const SnackBar(content: Text('Profile & posts updated successfully')),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -119,7 +130,7 @@ class _SettingPageState extends State<SettingPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Settings"),
-        backgroundColor: const Color(0xFF0C6F8B),
+        backgroundColor: mainColor,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -137,7 +148,7 @@ class _SettingPageState extends State<SettingPage> {
                   radius: 60,
                   backgroundImage: avatarImage,
                   child: avatarImage == null
-                      ? const Icon(Icons.person, size: 60)
+                      ? Icon(Icons.person, size: 100, color: shadowColor)
                       : null,
                 ),
               ),
@@ -145,17 +156,27 @@ class _SettingPageState extends State<SettingPage> {
               buildTextField("Username", usernameController),
               buildTextField("Email", emailController),
               buildTextField("Phone", phoneController),
-              buildTextField("Address", addressController),
               buildTextField("Academic Year", yearController),
               buildTextField("Roll Number", rollNumberController),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: updateUserData,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0C6F8B),
+                  backgroundColor: mainColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: const Text("Save Changes"),
-              )
+                child: const Text(
+                  "Save Changes",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -172,7 +193,8 @@ class _SettingPageState extends State<SettingPage> {
           labelText: label,
           border: const OutlineInputBorder(),
         ),
-        validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+        validator: (value) =>
+        value == null || value.trim().isEmpty ? 'Required' : null,
       ),
     );
   }

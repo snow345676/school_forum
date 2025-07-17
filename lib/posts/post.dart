@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +28,6 @@ class Post extends StatefulWidget {
 }
 
 class _PostState extends State<Post> {
-  String? username;
   String? avatarBase64;
   final currentUser = FirebaseAuth.instance.currentUser!;
   final TextEditingController _commentTextController = TextEditingController();
@@ -40,23 +40,9 @@ class _PostState extends State<Post> {
   @override
   void initState() {
     super.initState();
-    fetchUsername();
     fetchAvatar();
     isLiked = widget.likes.contains(currentUser.email);
     likeCount = widget.likes.length;
-  }
-
-  Future<void> fetchUsername() async {
-    final doc = await FirebaseFirestore.instance
-        .collection("users")
-        .doc(currentUser.uid)
-        .get();
-
-    if (doc.exists) {
-      setState(() {
-        username = doc['username'] ?? 'Unknown';
-      });
-    }
   }
 
   Future<void> fetchAvatar() async {
@@ -137,6 +123,12 @@ class _PostState extends State<Post> {
 
   void addComment(String commentText) async {
     if (commentText.trim().isEmpty) return;
+
+    final userSnapshot = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(currentUser.uid)
+        .get();
+    final username = userSnapshot.data()?['username'] ?? "Unknown";
 
     await FirebaseFirestore.instance
         .collection("User_Posts")
@@ -245,49 +237,64 @@ class _PostState extends State<Post> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// Post Header
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => UserProfilePage(userId: widget.postOwnerId),
-                    ),
-                  );
-                },
-                child: CircleAvatar(
-                  radius: 25,
-                  backgroundImage: resolveAvatar(avatarBase64),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => UserProfilePage(userId: widget.postOwnerId),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    widget.user,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
+          /// Post Header - with real-time username update
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection("users")
+                .doc(widget.postOwnerId)
+                .snapshots(),
+            builder: (context, snapshot) {
+              String displayUsername = widget.user;
+
+              if (snapshot.hasData && snapshot.data!.exists) {
+                final data = snapshot.data!.data() as Map<String, dynamic>;
+                displayUsername = data['username'] ?? widget.user;
+              }
+
+              return Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => UserProfilePage(userId: widget.postOwnerId),
+                        ),
+                      );
+                    },
+                    child: CircleAvatar(
+                      radius: 25,
+                      backgroundImage: resolveAvatar(avatarBase64),
                     ),
                   ),
-                ),
-              ),
-              Text(
-                widget.time,
-                style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-              ),
-            ],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => UserProfilePage(userId: widget.postOwnerId),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        displayUsername,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    widget.time,
+                    style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                  ),
+                ],
+              );
+            },
           ),
 
           const SizedBox(height: 20),
@@ -295,9 +302,8 @@ class _PostState extends State<Post> {
           /// Post Message
           Text(
             widget.message,
-            style: TextStyle(fontSize: 16, color: Colors.grey[800]),
+            style: TextStyle(fontSize: 18, color: Colors.grey[800]),
           ),
-
 
           /// Like & Comment buttons
           Row(

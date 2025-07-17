@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
           selectionHandleColor: mainColor,
         ),
         progressIndicatorTheme: ProgressIndicatorThemeData(
-          color: lighterColor,
+          color: shadowColor,
         ),
       ),
       darkTheme: darkMode,
