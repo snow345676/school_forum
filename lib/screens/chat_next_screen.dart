@@ -2,6 +2,7 @@ import 'dart:convert'; // for base64Decode
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:school_forum/main.dart';
 
 class ChatNextScreen extends StatefulWidget {
   const ChatNextScreen({super.key, required this.selectedUser});
@@ -12,6 +13,9 @@ class ChatNextScreen extends StatefulWidget {
 }
 
 class _ChatNextScreenState extends State<ChatNextScreen> {
+  final Color mainColor = const Color(0xFF4FB3C9);
+  final Color lighterColor = const Color(0xFF6BC6EF);
+  final Color shadowColor = const Color(0xFF084A59);
   final myId = FirebaseAuth.instance.currentUser!.uid;
   final TextEditingController chatController = TextEditingController();
 
@@ -47,7 +51,7 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: isMe ? Colors.blue.shade100 : Colors.grey.shade200,
+        color: isMe ? mainColor : lighterColor ,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(text),
@@ -186,7 +190,7 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
               padding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(color: Colors.grey.shade300),
               ),
@@ -195,7 +199,8 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
                   Expanded(
                     child: TextField(
                       controller: chatController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
+
                         hintText: 'Type a message...',
                         border: InputBorder.none,
                       ),
@@ -223,7 +228,7 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
                       chatController.clear();
                     },
                     child: CircleAvatar(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: shadowColor,
                       child: const Icon(Icons.send,
                           color: Colors.white, size: 18),
                     ),

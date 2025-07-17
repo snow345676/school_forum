@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../screens/user_profile_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:school_forum/screens/user_profile_screen.dart';
+import 'chat_next_screen.dart';
 import 'home_screen.dart';
 
 class SearchPage extends StatefulWidget {
@@ -17,6 +20,9 @@ class _SearchPageState extends State<SearchPage> {
   final FocusNode _searchFocusNode = FocusNode();
   String _searchTerm = "";
   Timer? _debounce;
+  final User? currentUser = FirebaseAuth.instance.currentUser;
+  final CollectionReference usersRef =
+  FirebaseFirestore.instance.collection("users");
 
   @override
   void dispose() {
@@ -29,17 +35,39 @@ class _SearchPageState extends State<SearchPage> {
   void _onSearchChanged(String value) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
       setState(() {
         _searchTerm = value.trim();
       });
     });
   }
 
-  void _clearSearch() {
-    _searchController.clear();
-    setState(() {
-      _searchTerm = '';
-    });
+  bool _isValidImageUrl(String value) {
+    return value.startsWith("http");
+  }
+
+  Widget _buildAvatar(String avatarField) {
+    if (avatarField.isEmpty) {
+      return const CircleAvatar(
+        backgroundImage: NetworkImage("https://sl.bing.net/b5Z2jTtlUKy"),
+      );
+    }
+
+    if (_isValidImageUrl(avatarField)) {
+      return CircleAvatar(
+        backgroundImage: NetworkImage(avatarField),
+      );
+    }
+
+    try {
+      return CircleAvatar(
+        backgroundImage: MemoryImage(base64Decode(avatarField)),
+      );
+    } catch (_) {
+      return const CircleAvatar(
+        backgroundImage: NetworkImage("https://sl.bing.net/b5Z2jTtlUKy"),
+      );
+    }
   }
 
   @override
@@ -66,12 +94,20 @@ class _SearchPageState extends State<SearchPage> {
               focusNode: _searchFocusNode,
               controller: _searchController,
               decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.grey[300],
                 hintText: "Search by username...",
-                prefixIcon:Icon(Icons.person,color: shadowColor,),
+                prefixIcon: Icon(Icons.person, color: shadowColor),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                  icon: Icon(Icons.clear,color: shadowColor,),
-                  onPressed: _clearSearch,
+                  icon: Icon(Icons.clear, color: shadowColor),
+                  onPressed: () {
+                    _searchController.clear();
+                    if (!mounted) return;
+                    setState(() {
+                      _searchTerm = '';
+                    });
+                  },
                 )
                     : null,
                 border: OutlineInputBorder(
@@ -82,30 +118,22 @@ class _SearchPageState extends State<SearchPage> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: shadowColor, width: 2.0),
                 ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.red),
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.redAccent, width: 2.0),
-                ),
               ),
               onChanged: _onSearchChanged,
             ),
           ),
 
-          // List of filtered users
+          // User list
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: _searchTerm.isEmpty
-                  ? FirebaseFirestore.instance
-                  .collection("users")
+              stream: (_searchTerm.isEmpty)
+                  ? usersRef
+                  .where(FieldPath.documentId, isNotEqualTo: currentUser?.uid)
                   .orderBy("username")
-                  .limit(10)
+                  .limit(20)
                   .snapshots()
-                  : FirebaseFirestore.instance
-                  .collection("users")
+                  : usersRef
+                  .where(FieldPath.documentId, isNotEqualTo: currentUser?.uid)
                   .orderBy("username")
                   .startAt([_searchTerm])
                   .endAt(['$_searchTerm\uf8ff'])
@@ -114,7 +142,6 @@ class _SearchPageState extends State<SearchPage> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(child: Text("No users found"));
                 }
@@ -125,21 +152,31 @@ class _SearchPageState extends State<SearchPage> {
                   itemCount: users.length,
                   itemBuilder: (context, index) {
                     final userDoc = users[index];
-                    final username = userDoc['username'];
+                    final userData = userDoc.data()! as Map<String, dynamic>;
                     final userId = userDoc.id;
+                    final username = userData['username'] ?? 'Unknown';
+                    final avatarBase64 = userData['avatar_base64'] ?? '';
+                    final userState = userData['state'] ?? 'offline';
 
                     return ListTile(
-                      leading: const Icon(Icons.account_circle,
-                          color: Color(0xFF0C6F8B)),
-                      title: Text(username),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => UserProfilePage(userId: userId),
+                            builder: (_) => UserProfilePage(userId: userId)
                           ),
                         );
                       },
+                      leading: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          _buildAvatar(avatarBase64),
+                        ],
+                      ),
+                      title: Text(username,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          )),
                     );
                   },
                 );

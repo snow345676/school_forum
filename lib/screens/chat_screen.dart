@@ -1,7 +1,8 @@
-import 'dart:convert'; // for base64Decode
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:school_forum/Theme/darkMode.dart';
 import 'chat_next_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -12,9 +13,11 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
-  User? user = FirebaseAuth.instance.currentUser;
+  final User? user = FirebaseAuth.instance.currentUser;
   final CollectionReference userRef =
   FirebaseFirestore.instance.collection("users");
+
+  String searchQuery = "";
   late DocumentReference myRef;
 
   @override
@@ -43,145 +46,126 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   void _setUserOffline() {
     if (user != null) {
-      myRef.set(
-        {
-          "state": "offline",
-          "last_seen": FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
+      myRef.set({
+        "state": "offline",
+        "last_seen": FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     }
   }
 
-  Future<String> _getAvatarBase64() async {
-    final doc =
-    await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
-    return doc.data()?['avatar_base64'] ?? '';
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (user != null) {
-      if (state == AppLifecycleState.resumed) {
-        _setUserOnline();
-      } else {
-        _setUserOffline();
-      }
-    }
-  }
-
-  /// Detects whether a string is a valid image URL
-  bool _isValidImageUrl(String value) {
-    return value.startsWith("http");
-  }
+  bool _isValidImageUrl(String value) => value.startsWith("http");
 
   @override
   Widget build(BuildContext context) {
-    print("CURRENT USER: ${FirebaseAuth.instance.currentUser}");
-
     return Scaffold(
+      appBar: AppBar(
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(15),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: TextField(
+              onChanged: (value) {
+                setState(() => searchQuery = value.toLowerCase());
+              },
+              decoration: InputDecoration(
+                hintText: "Search by username...",
+                filled: true,
+                fillColor: Colors.grey[300],
+                prefixIcon: const Icon(Icons.search),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: userRef.snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            final users = snapshot.data!.docs.where((doc) {
-              return doc.id != user!.uid; // skip yourself
-            }).toList();
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
-            if (users.isEmpty) {
-              return const Center(child: Text("No other users found"));
-            }
+          final users = snapshot.data!.docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final username = (data['username'] ?? '').toString().toLowerCase();
+            return doc.id != user!.uid && username.contains(searchQuery);
+          }).toList();
 
-            return ListView.builder(
-              itemCount: users.length,
-              itemBuilder: (context, index) {
-                final eachUserData =
-                users[index].data() as Map<String, dynamic>;
+          if (users.isEmpty) return const Center(child: Text("No users found"));
 
-                final otherId = users[index].id;
+          return ListView.builder(
+            itemCount: users.length,
+            itemBuilder: (context, index) {
+              final userDoc = users[index];
+              final data = userDoc.data() as Map<String, dynamic>;
+              final otherId = userDoc.id;
+              final avatarField = data['avatar_base64'] ?? '';
+              final List<String> ids = [user!.uid, otherId]..sort();
+              final chatPath = '${ids[0]}_${ids[1]}';
 
-                // Create chatPath using sorted UIDs
-                final List<String> ids = [user!.uid, otherId]..sort();
-                final chatPath = '${ids[0]}_${ids[1]}';
+              return StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection("chats")
+                    .doc(chatPath)
+                    .collection("messages")
+                    .orderBy("timestamp", descending: true)
+                    .limit(1)
+                    .snapshots(),
+                builder: (context, chatSnapshot) {
+                  String lastMessage = "";
+                  if (chatSnapshot.hasData &&
+                      chatSnapshot.data!.docs.isNotEmpty) {
+                    final msg = chatSnapshot.data!.docs.first.data()
+                    as Map<String, dynamic>;
+                    lastMessage = msg['text'] ?? '';
+                  }
 
-                // Get avatar field
-                final avatarField =
-                    eachUserData['avatar_base64'] ?? ''; // from Firestore
-                print("Avatar for ${eachUserData['username']}: $avatarField");
-
-                return StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection("chats")
-                      .doc(chatPath)
-                      .collection("messages")
-                      .orderBy("timestamp", descending: true)
-                      .limit(1)
-                      .snapshots(),
-                  builder: (context, chatSnapshot) {
-                    String lastMessage = '';
-                    if (chatSnapshot.hasData &&
-                        chatSnapshot.data!.docs.isNotEmpty) {
-                      final msg = chatSnapshot.data!.docs.first.data()
-                      as Map<String, dynamic>;
-                      lastMessage = msg['text'] ?? '';
-                    }
-
-                    return ListTile(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => ChatNextScreen(
-                              selectedUser: {
-                                ...eachUserData,
-                                "uid": otherId, // pass UID too
-                              },
+                  return ListTile(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatNextScreen(
+                            selectedUser: {
+                              ...data,
+                              "uid": otherId,
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    leading: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        _buildAvatar(avatarField),
+                        if (data['state'] == 'online')
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
                             ),
                           ),
-                        );
-                      },
-                      leading: Stack(
-                        alignment: Alignment.bottomRight,
-                        children: [
-                          _buildAvatar(avatarField),
-                          if (eachUserData['state'] == 'online')
-                            Container(
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.green,
-                              ),
-                              width: 12,
-                              height: 12,
-                            ),
-                        ],
-                      ),
-                      title: Text(eachUserData['username'] ?? 'Unknown'),
-                      subtitle: lastMessage.startsWith('http')
-                          ? Align(
-                        alignment: Alignment.centerLeft,
-                        child: Image.network(
-                          lastMessage,
-                          width: 20,
-                          height: 20,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                          : Text(lastMessage),
-                    );
-                  },
-                );
-              },
-            );
-          } else if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
-          } else {
-            return const Center(child: CircularProgressIndicator());
-          }
+                      ],
+                    ),
+                    title: Text(data['username'] ?? 'Unknown'),
+                    subtitle: lastMessage.startsWith('http')
+                        ? Image.network(lastMessage, width: 20, height: 20)
+                        : Text(lastMessage),
+                  );
+                },
+              );
+            },
+          );
         },
       ),
     );
   }
 
-  /// Builds avatar image based on whether it's URL, base64, or empty
   Widget _buildAvatar(String avatarField) {
     if (avatarField.isEmpty) {
       return const CircleAvatar(
@@ -189,20 +173,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       );
     }
 
-    // If it's a URL
     if (_isValidImageUrl(avatarField)) {
-      return CircleAvatar(
-        backgroundImage: NetworkImage(avatarField),
-      );
+      return CircleAvatar(backgroundImage: NetworkImage(avatarField));
     }
 
-    // Otherwise assume it's base64
     try {
-      return CircleAvatar(
-        backgroundImage: MemoryImage(base64Decode(avatarField)),
-      );
-    } catch (e) {
-      print("Invalid base64 avatar, showing default");
+      return CircleAvatar(backgroundImage: MemoryImage(base64Decode(avatarField)));
+    } catch (_) {
       return const CircleAvatar(
         backgroundImage: NetworkImage("https://sl.bing.net/b5Z2jTtlUKy"),
       );
