@@ -17,7 +17,7 @@ class _FlatState extends State<SplashScreen> {
   void initState() {
 
     super.initState();
-    Future.delayed(const Duration(seconds: 3)).then((value) {
+    Future.delayed(const Duration(seconds: 5)).then((value) {
       Navigator.of(context).pushReplacement(
         CupertinoPageRoute(builder: (context) => const Auth()),
       );
@@ -34,8 +34,8 @@ class _FlatState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon( Icons.mark_unread_chat_alt,size: 120,color: shadowColor,),
-            SizedBox(height: 50),
+            Icon( Icons.chat_rounded,size: 150,color: shadowColor,),
+            SizedBox(height: 100),
             SpinKitThreeInOut
         (
               size: 30.0,
