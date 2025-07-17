@@ -41,9 +41,9 @@ class MyApp extends StatelessWidget {
       darkTheme: darkMode,
       themeMode: ThemeMode.system,
 
-      home: NotificationListenerWidget(
-        child: HomeScreen(),
-      ),
+      home:
+        SplashScreen(),
+
     );
   }
 }

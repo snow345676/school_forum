@@ -1,8 +1,8 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../screens/user_profile_screen.dart';
 import 'home_screen.dart';
-
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -12,25 +12,50 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
+  final Color shadowColor = const Color(0xFF084A59);
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  String searchTerm = "";
+  String _searchTerm = "";
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      setState(() {
+        _searchTerm = value.trim();
+      });
+    });
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() {
+      _searchTerm = '';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () {
-              Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomeScreen()));
-            },
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const HomeScreen()));
+          },
         ),
-        title: const Text("Search Users"),
+        title: const Text("Search Users", style: TextStyle(color: Colors.white)),
         backgroundColor: const Color(0xFF0C6F8B),
-
       ),
       body: Column(
         children: [
@@ -42,23 +67,38 @@ class _SearchPageState extends State<SearchPage> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: "Search by username...",
-                prefixIcon: const Icon(Icons.person),
+                prefixIcon:Icon(Icons.person,color: shadowColor,),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: Icon(Icons.clear,color: shadowColor,),
+                  onPressed: _clearSearch,
+                )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: shadowColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: shadowColor, width: 2.0),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.red),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.redAccent, width: 2.0),
                 ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  searchTerm = value.trim();
-                });
-              },
+              onChanged: _onSearchChanged,
             ),
           ),
 
           // List of filtered users
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: searchTerm.isEmpty
+              stream: _searchTerm.isEmpty
                   ? FirebaseFirestore.instance
                   .collection("users")
                   .orderBy("username")
@@ -67,8 +107,8 @@ class _SearchPageState extends State<SearchPage> {
                   : FirebaseFirestore.instance
                   .collection("users")
                   .orderBy("username")
-                  .startAt([searchTerm])
-                  .endAt([searchTerm + '\uf8ff'])
+                  .startAt([_searchTerm])
+                  .endAt(['$_searchTerm\uf8ff'])
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -89,7 +129,8 @@ class _SearchPageState extends State<SearchPage> {
                     final userId = userDoc.id;
 
                     return ListTile(
-                      leading: const Icon(Icons.account_circle, color: Color(0xFF0C6F8B)),
+                      leading: const Icon(Icons.account_circle,
+                          color: Color(0xFF0C6F8B)),
                       title: Text(username),
                       onTap: () {
                         Navigator.push(

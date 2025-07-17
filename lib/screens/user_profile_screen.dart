@@ -1,14 +1,16 @@
+import 'dart:convert';  // add for base64 decode
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:school_forum/screens/chat_next_screen.dart';
 
 import '../posts/post.dart';
 import '../helper/helper.dart';
+import '../screens/chat_screen.dart';
 
 class UserProfilePage extends StatefulWidget {
   final String userId;
 
-  const UserProfilePage({super.key, required this.userId});
+  const UserProfilePage({Key? key, required this.userId}) : super(key: key);
 
   @override
   State<UserProfilePage> createState() => _UserProfilePageState();
@@ -38,11 +40,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
         });
       } else {
         setState(() {
+          userData = null;
           isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
+        userData = null;
         isLoading = false;
       });
     }
@@ -50,8 +54,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final mainColor = const Color(0xFF0C6F8B);
-    final lighterColor = const Color(0xFF3AA0C9);
+    final Color mainColor = const Color(0xFF0C6F8B);
+    final Color lighterColor = const Color(0xFF3AA0C9);
 
     if (isLoading) {
       return const Scaffold(
@@ -61,19 +65,42 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
     if (userData == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text("User Profile")),
-        body: const Center(child: Text("User not found")),
+        appBar: AppBar(
+          title: const Text('User Profile'),
+          backgroundColor: mainColor,
+        ),
+        body: const Center(child: Text('User not found')),
       );
     }
 
-    final photoUrl = userData!['photoUrl'] ??
-        'https://www.gravatar.com/avatar/placeholder';
+    // Try to get base64 avatar first
+    ImageProvider? avatarImage;
+
+    if (userData!['avatar_base64'] != null && userData!['avatar_base64'].isNotEmpty) {
+      try {
+        avatarImage = MemoryImage(base64Decode(userData!['avatar_base64']));
+      } catch (e) {
+        avatarImage = null;
+      }
+    }
+
+    // If no base64 avatar, fallback to photoUrl string
+    if (avatarImage == null) {
+      final photoUrl = userData!['photoUrl'];
+      if (photoUrl != null && photoUrl.isNotEmpty) {
+        avatarImage = NetworkImage(photoUrl);
+      } else {
+        // Default avatar image or icon
+        avatarImage = const AssetImage('assets/images/default_avatar.png');
+        // or use NetworkImage for a default URL
+      }
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Header
+          // Header with gradient background and chat icon
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -87,16 +114,18 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 bottomRight: Radius.circular(35),
               ),
             ),
-            padding: const EdgeInsets.only(top: 40, left: 10, right: 20, bottom: 20),
+            padding: const EdgeInsets.only(
+                top: 40, left: 10, right: 20, bottom: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Row
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
+                      icon:
+                      const Icon(Icons.arrow_back, color: Colors.white, size: 26),
                       onPressed: () => Navigator.pop(context),
                     ),
                     const Text(
@@ -107,10 +136,25 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(width: 40), // Spacer
+                    IconButton(
+                      icon: const Icon(Icons.message, color: Colors.white, size: 26),
+                      tooltip: 'Chat',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChatNextScreen(selectedUser: selectedUser)
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
+
                 const SizedBox(height: 20),
+
+                // Profile picture and user info row
                 Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -118,7 +162,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       CircleAvatar(
                         radius: 42,
                         backgroundColor: Colors.white,
-                        backgroundImage: NetworkImage(photoUrl),
+                        backgroundImage: avatarImage,
                       ),
                       const SizedBox(width: 30),
                       Column(
@@ -152,7 +196,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
           const SizedBox(height: 30),
 
-          // Posts
+          // User's posts list
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -166,6 +210,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 }
 
                 final docs = snapshot.data!.docs;
+
                 if (docs.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.all(20),
@@ -177,8 +222,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
+
                     return Post(
-                      message: data['Message'],
+                      message: data['Message'] ?? '',
                       user: data['username'] ?? 'Unknown',
                       postId: docs[index].id,
                       likes: List<String>.from(data['Likes'] ?? []),
