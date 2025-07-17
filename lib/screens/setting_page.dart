@@ -23,7 +23,6 @@ class _SettingPageState extends State<SettingPage> {
   final TextEditingController addressController = TextEditingController();
   final TextEditingController yearController = TextEditingController();
   final TextEditingController rollNumberController = TextEditingController();
-  final TextEditingController genderController = TextEditingController();
 
   bool isLoading = true;
   String? error;
@@ -50,7 +49,7 @@ class _SettingPageState extends State<SettingPage> {
         addressController.text = data['address'] ?? '';
         yearController.text = data['year'] ?? '';
         rollNumberController.text = data['rollNumber'] ?? '';
-
+        avatarBase64 = data['avatar_base64'] ?? '';
       }
 
       setState(() {
@@ -91,8 +90,6 @@ class _SettingPageState extends State<SettingPage> {
     }
   }
 
-
-
   Future<void> _pickNewAvatar() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
@@ -101,6 +98,10 @@ class _SettingPageState extends State<SettingPage> {
       setState(() {
         avatarBase64 = base64Encode(bytes);
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Image selected!')),
+      );
     }
   }
 
@@ -110,7 +111,9 @@ class _SettingPageState extends State<SettingPage> {
     if (avatarBase64 != null && avatarBase64!.isNotEmpty) {
       try {
         avatarImage = MemoryImage(base64Decode(avatarBase64!));
-      } catch (_) {}
+      } catch (_) {
+        avatarImage = null;
+      }
     }
 
     return Scaffold(
@@ -118,7 +121,7 @@ class _SettingPageState extends State<SettingPage> {
         title: const Text("Settings"),
         backgroundColor: const Color(0xFF0C6F8B),
       ),
-      body:  isLoading
+      body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : error != null
           ? Center(child: Text(error!))
@@ -138,13 +141,13 @@ class _SettingPageState extends State<SettingPage> {
                       : null,
                 ),
               ),
+              const SizedBox(height: 20),
               buildTextField("Username", usernameController),
               buildTextField("Email", emailController),
               buildTextField("Phone", phoneController),
               buildTextField("Address", addressController),
               buildTextField("Academic Year", yearController),
               buildTextField("Roll Number", rollNumberController),
-
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: updateUserData,

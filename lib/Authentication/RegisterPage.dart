@@ -22,6 +22,10 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final Color mainColor = const Color(0xFF4FB3C9);
+  final Color lighterColor = const Color(0xFF6BC6EF);
+  final Color shadowColor = const Color(0xFF084A59);
+
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -112,9 +116,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
 
-    final Color mainColor = const Color(0xFF0C6F8B);
-    final Color lighterColor = const Color(0xFF3AA0C9);
-    final Color shadowColor = const Color(0xFF084A59);
+
 
     return Scaffold(
       backgroundColor: Theme
@@ -136,11 +138,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: CircleAvatar(
                   radius: 50,
                   backgroundImage: avatarImage,
-                  child: avatarImage == null ? const Icon(Icons.person, size: 50) : null,
+                  child: avatarImage == null ? Icon(Icons.person, size: 70,color: shadowColor ,) : null,
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text('Tap avatar to pick image'),
+              const SizedBox(height: 18),
+              const Text('Tap avatar to pick image',style: TextStyle(fontWeight: FontWeight.bold),),
+              const SizedBox(height: 18),
 
               // Icon(
               //   Icons.mark_unread_chat_alt,
