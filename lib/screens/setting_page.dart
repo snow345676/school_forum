@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -24,6 +27,7 @@ class _SettingPageState extends State<SettingPage> {
 
   bool isLoading = true;
   String? error;
+  String? avatarBase64;
 
   @override
   void initState() {
@@ -73,6 +77,7 @@ class _SettingPageState extends State<SettingPage> {
           'address': addressController.text,
           'year': yearController.text,
           'rollNumber': rollNumberController.text,
+          'avatar_base64': avatarBase64 ?? '',
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -86,14 +91,34 @@ class _SettingPageState extends State<SettingPage> {
     }
   }
 
+
+
+  Future<void> _pickNewAvatar() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        avatarBase64 = base64Encode(bytes);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    ImageProvider? avatarImage;
+    if (avatarBase64 != null && avatarBase64!.isNotEmpty) {
+      try {
+        avatarImage = MemoryImage(base64Decode(avatarBase64!));
+      } catch (_) {}
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Settings"),
         backgroundColor: const Color(0xFF0C6F8B),
       ),
-      body: isLoading
+      body:  isLoading
           ? const Center(child: CircularProgressIndicator())
           : error != null
           ? Center(child: Text(error!))
@@ -103,6 +128,16 @@ class _SettingPageState extends State<SettingPage> {
           key: _formKey,
           child: ListView(
             children: [
+              GestureDetector(
+                onTap: _pickNewAvatar,
+                child: CircleAvatar(
+                  radius: 60,
+                  backgroundImage: avatarImage,
+                  child: avatarImage == null
+                      ? const Icon(Icons.person, size: 60)
+                      : null,
+                ),
+              ),
               buildTextField("Username", usernameController),
               buildTextField("Email", emailController),
               buildTextField("Phone", phoneController),

@@ -63,11 +63,12 @@ class _PostState extends State<Post> {
   /// Create Notification function
   Future<void> createNotification({
     required String toUserId,
-    required String type, // "like" or "comment"
+    required String type,
     required String fromUserEmail,
     required String postId,
   }) async {
     try {
+      print("Attempting to add notification for user $toUserId");
       await FirebaseFirestore.instance
           .collection("users")
           .doc(toUserId)
@@ -81,11 +82,13 @@ class _PostState extends State<Post> {
             : "$fromUserEmail commented on your post",
         "timestamp": FieldValue.serverTimestamp(),
       });
-      print(" Notification CREATED for $type → toUser: $toUserId");
-    } catch (e) {
-      print("Notification FAILED: $e");
+      print("Notification added successfully!");
+    } catch (e, stack) {
+      print("Error adding notification: $e");
+      print(stack);
     }
   }
+
 
   ///  Toggle like
   void toggleLike() async {

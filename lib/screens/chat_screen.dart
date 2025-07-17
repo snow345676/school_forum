@@ -48,6 +48,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
+  Future<String> _getAvatarBase64() async {
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
+    return doc.data()?['avatar_base64'] ?? '';
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (user != null) {
@@ -88,6 +93,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 //  Create chatPath using sorted UIDs
                 final List<String> ids = [user!.uid, otherId]..sort();
                 final chatPath = '${ids[0]}_${ids[1]}';
+                final avatarBase64 = eachUserData['avatar_base64'] ?? '';
 
                 return StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
@@ -124,7 +130,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         children: [
                           CircleAvatar(
                             backgroundImage: NetworkImage(
-                              eachUserData['photoUrl'] ??
+                              eachUserData['avatarBase64'] ??
                                   'https://sl.bing.net/b5Z2jTtlUKy',
                             ),
                           ),

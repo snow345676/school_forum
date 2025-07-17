@@ -66,7 +66,7 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
             children: [
               CircleAvatar(
                 backgroundImage:
-                NetworkImage(widget.selectedUser['photoUrl'] ?? ''),
+                NetworkImage(widget.selectedUser['avatarBase64'] ?? ''),
               ),
               if (widget.selectedUser['state'] == 'online')
                 Container(
@@ -106,7 +106,7 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
                         CircleAvatar(
                           radius: 50,
                           backgroundImage:
-                          NetworkImage(widget.selectedUser['photoUrl'] ?? ''),
+                          NetworkImage(widget.selectedUser['avatarBase64'] ?? ''),
                         ),
                         const SizedBox(height: 10),
                         Text(widget.selectedUser['username'] ?? "Unknown"),
