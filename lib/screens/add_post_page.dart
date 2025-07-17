@@ -50,7 +50,7 @@ class _AddPostPageState extends State<AddPostPage> {
 
 
       await FirebaseFirestore.instance.collection("User_Posts").add({
-        'uid': uid,
+        'uid': currentUser?.uid,
         'username': username,
         'UserEmail': currentUser?.email,
         'Message': content,

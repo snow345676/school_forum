@@ -1,3 +1,4 @@
+import 'dart:convert'; // for base64Decode
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,8 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   User? user = FirebaseAuth.instance.currentUser;
-  final CollectionReference userRef = FirebaseFirestore.instance.collection("users");
+  final CollectionReference userRef =
+  FirebaseFirestore.instance.collection("users");
   late DocumentReference myRef;
 
   @override
@@ -41,15 +43,19 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   void _setUserOffline() {
     if (user != null) {
-      myRef.set({
-        "state": "offline",
-        "last_seen": FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      myRef.set(
+        {
+          "state": "offline",
+          "last_seen": FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
     }
   }
 
   Future<String> _getAvatarBase64() async {
-    final doc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
+    final doc =
+    await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
     return doc.data()?['avatar_base64'] ?? '';
   }
 
@@ -64,6 +70,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
+  /// Detects whether a string is a valid image URL
+  bool _isValidImageUrl(String value) {
+    return value.startsWith("http");
+  }
+
   @override
   Widget build(BuildContext context) {
     print("CURRENT USER: ${FirebaseAuth.instance.currentUser}");
@@ -73,7 +84,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         stream: userRef.snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            //  Don't filter by userId field, just use doc.id
             final users = snapshot.data!.docs.where((doc) {
               return doc.id != user!.uid; // skip yourself
             }).toList();
@@ -85,14 +95,19 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             return ListView.builder(
               itemCount: users.length,
               itemBuilder: (context, index) {
-                final eachUserData = users[index].data() as Map<String, dynamic>;
+                final eachUserData =
+                users[index].data() as Map<String, dynamic>;
 
-                //  doc.id is the other user UID
                 final otherId = users[index].id;
 
-                //  Create chatPath using sorted UIDs
+                // Create chatPath using sorted UIDs
                 final List<String> ids = [user!.uid, otherId]..sort();
                 final chatPath = '${ids[0]}_${ids[1]}';
+
+                // Get avatar field
+                final avatarField =
+                    eachUserData['avatar_base64'] ?? ''; // from Firestore
+                print("Avatar for ${eachUserData['username']}: $avatarField");
 
                 return StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
@@ -127,12 +142,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                       leading: Stack(
                         alignment: Alignment.bottomRight,
                         children: [
-                          CircleAvatar(
-                            backgroundImage: NetworkImage(
-                              eachUserData['photoUrl'] ??
-                                  'https://sl.bing.net/b5Z2jTtlUKy',
-                            ),
-                          ),
+                          _buildAvatar(avatarField),
                           if (eachUserData['state'] == 'online')
                             Container(
                               decoration: const BoxDecoration(
@@ -169,5 +179,33 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         },
       ),
     );
+  }
+
+  /// Builds avatar image based on whether it's URL, base64, or empty
+  Widget _buildAvatar(String avatarField) {
+    if (avatarField.isEmpty) {
+      return const CircleAvatar(
+        backgroundImage: NetworkImage("https://sl.bing.net/b5Z2jTtlUKy"),
+      );
+    }
+
+    // If it's a URL
+    if (_isValidImageUrl(avatarField)) {
+      return CircleAvatar(
+        backgroundImage: NetworkImage(avatarField),
+      );
+    }
+
+    // Otherwise assume it's base64
+    try {
+      return CircleAvatar(
+        backgroundImage: MemoryImage(base64Decode(avatarField)),
+      );
+    } catch (e) {
+      print("Invalid base64 avatar, showing default");
+      return const CircleAvatar(
+        backgroundImage: NetworkImage("https://sl.bing.net/b5Z2jTtlUKy"),
+      );
+    }
   }
 }
