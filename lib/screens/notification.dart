@@ -103,10 +103,7 @@ class NotificationPage extends StatelessWidget {
                   timeString,
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                 ),
-                trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-                onTap: () {
-                  print(" Notification tapped for post: ${notif['postId']}");
-                },
+
               );
             },
           );

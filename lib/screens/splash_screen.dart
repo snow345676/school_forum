@@ -34,7 +34,7 @@ class _FlatState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon( Icons.mark_unread_chat_alt,size: 150,color: shadowColor,),
+            Icon( Icons.chat_rounded,size: 150,color: shadowColor,),
             SizedBox(height: 100),
             SpinKitThreeInOut
         (
