@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:school_forum/screens/home_screen.dart';
 import 'package:school_forum/screens/setting_page.dart';
 import '../posts/post.dart';
@@ -15,6 +18,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? userData;
+  String? avatarBase64;
   bool isLoading = true;
   String? error;
   final currentUser = FirebaseAuth.instance.currentUser;
@@ -62,8 +66,38 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _updateProfile() async {
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(currentUser!.uid).update({
+        'avatar_base64': avatarBase64 ?? '',
+      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Update failed: $e')));
+    }
+  }
+
+  Future<void> _pickNewAvatar() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        avatarBase64 = base64Encode(bytes);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    ImageProvider? avatarImage;
+    if (avatarBase64 != null && avatarBase64!.isNotEmpty) {
+      try {
+        avatarImage = MemoryImage(base64Decode(avatarBase64!));
+      } catch (_) {}
+    }
+
+
     final Color mainColor = const Color(0xFF0C6F8B);
     final Color lighterColor = const Color(0xFF3AA0C9);
 
@@ -152,7 +186,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       CircleAvatar(
                         radius: 42,
                         backgroundColor: Colors.white,
-                        backgroundImage: NetworkImage(photoUrl),
+                        backgroundImage: avatarImage,
                       ),
 
                       const SizedBox(width: 30),
@@ -232,6 +266,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             postId: post.id,
                             likes: List<String>.from(data['Likes'] ?? []),
                             time: formatDate(data['TimeStamp']),
+                            postOwnerId: post['uid'],
                           );
                         },
                       );

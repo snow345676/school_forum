@@ -17,9 +17,8 @@ class Loginpage extends StatefulWidget {
 }
 
 class _LoginpageState extends State<Loginpage> {
-  //text controller
+  bool _obscurePassword = true;
   TextEditingController emailController = TextEditingController();
-
   TextEditingController passwordController = TextEditingController();
 
   void Login() async {
@@ -58,6 +57,7 @@ class _LoginpageState extends State<Loginpage> {
 
   @override
   Widget build(BuildContext context) {
+
     final Color mainColor = const Color(0xFF0C6F8B);      // #0C6F8B
     final Color lighterColor = const Color(0xFF3AA0C9);   // lighter blue for gradient
     final Color shadowColor = const Color(0xFF084A59);
@@ -100,11 +100,41 @@ class _LoginpageState extends State<Loginpage> {
                 SizedBox(height: 20),
 
                 // Password TextField
-                myTextField(
-                  labelText: "Password",
+                TextField(
+                  controller: passwordController,
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    labelStyle: TextStyle(color: Colors.grey[900]),
                     hintText: "Password",
-                    obscureText: true,
-                    controller: passwordController),
+                    hintStyle: const TextStyle(color: Colors.grey),
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
+                      onPressed: () {
+                        setState(() => _obscurePassword = !_obscurePassword);
+                      },
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: mainColor),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: shadowColor, width: 2.0),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.red),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderSide:
+                      const BorderSide(color: Colors.redAccent, width: 2.0),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                ),
 
                 SizedBox(height: 10),
 

@@ -48,6 +48,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
+  Future<String> _getAvatarBase64() async {
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
+    return doc.data()?['avatar_base64'] ?? '';
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (user != null) {

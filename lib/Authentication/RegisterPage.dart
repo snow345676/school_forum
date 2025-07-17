@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:school_forum/components/myButtons.dart';
 import 'package:school_forum/components/myTextField.dart';
 import 'package:school_forum/helper/helper.dart';
@@ -9,6 +12,7 @@ import 'package:school_forum/screens/home_screen.dart';
 
 
 class RegisterPage extends StatefulWidget {
+
   final void Function()? onTap;
 
   const RegisterPage({super.key, required this.onTap});
@@ -18,6 +22,7 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
@@ -27,8 +32,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
   String? selectedGender;
   String? selectedYear;
+  bool _obscurePassword = true;
+  String? avatarBase64;
+  String? error;
 
   void register() async {
+
     showDialog(
       context: context,
       builder: (context) => const Center(child: CircularProgressIndicator()),
@@ -41,14 +50,14 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     try {
-      //create user
+
       UserCredential? userCredential =
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
-      //create a user document and add to firestore
+
       createUserDocument(userCredential);
 
       Navigator.pop(context);
@@ -63,7 +72,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  //create a user document and collect them in firestore
+
   Future<void> createUserDocument(UserCredential? userCredential) async {
     if (userCredential != null && userCredential.user != null) {
       await FirebaseFirestore.instance
@@ -77,6 +86,19 @@ class _RegisterPageState extends State<RegisterPage> {
         'rollNumber': rollNumberController.text.trim(),
         'gender': selectedGender,
         'year': selectedYear,
+        'avatar_base64': avatarBase64 ?? '',
+      });
+    }
+  }
+
+
+  Future<void> pickAvatar() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        avatarBase64 = base64Encode(bytes);
       });
     }
   }
@@ -84,6 +106,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    ImageProvider? avatarImage;
+    if (avatarBase64 != null) {
+      avatarImage = MemoryImage(base64Decode(avatarBase64!));
+    }
+
+
     final Color mainColor = const Color(0xFF0C6F8B);
     final Color lighterColor = const Color(0xFF3AA0C9);
     final Color shadowColor = const Color(0xFF084A59);
@@ -93,7 +121,7 @@ class _RegisterPageState extends State<RegisterPage> {
           .of(context)
           .colorScheme
           .background,
-      resizeToAvoidBottomInset: true, // Ensure keyboard scroll works
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
@@ -101,17 +129,30 @@ class _RegisterPageState extends State<RegisterPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 20),
-              Icon(
-                Icons.mark_unread_chat_alt,
-                size: 120,
-                color: shadowColor,
+              if (error != null)
+                Text(error!, style: const TextStyle(color: Colors.red)),
+              GestureDetector(
+                onTap: pickAvatar,
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundImage: avatarImage,
+                  child: avatarImage == null ? const Icon(Icons.person, size: 50) : null,
+                ),
               ),
-              const SizedBox(height: 20),
-              const Text(
-                "School Net",
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 8),
+              const Text('Tap avatar to pick image'),
+
+              // Icon(
+              //   Icons.mark_unread_chat_alt,
+              //   size: 120,
+              //   color: shadowColor,
+              // ),
+              // const SizedBox(height: 20),
+              // const Text(
+              //   "School Net",
+              //   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              // ),
+              // const SizedBox(height: 30),
 
               myTextField(
                 hintText: "Username",
@@ -265,20 +306,78 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 20),
 
               // Password
-              myTextField(
-                hintText: "Password",
-                labelText: "Password",
-                obscureText: true,
+              TextField(
                 controller: passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: "Password",
+                  labelStyle: TextStyle(color: Colors.grey[900]),
+                  hintText: "Password",
+                  hintStyle: const TextStyle(color: Colors.grey),
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () {
+                      setState(() => _obscurePassword = !_obscurePassword);
+                    },
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: mainColor),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: shadowColor, width: 2.0),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.red),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderSide:
+                    const BorderSide(color: Colors.redAccent, width: 2.0),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
               ),
               const SizedBox(height: 20),
 
               // Confirm Password
-              myTextField(
-                hintText: "Confirm Password",
-                labelText: "Confirm Password",
-                obscureText: true,
+              TextField(
                 controller: confirmPasswordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: "Confirm Password",
+                  labelStyle: TextStyle(color: Colors.grey[900]),
+                  hintText: "Confirm Password",
+                  hintStyle: const TextStyle(color: Colors.grey),
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () {
+                      setState(() => _obscurePassword = !_obscurePassword);
+                    },
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: mainColor),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: shadowColor, width: 2.0),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.red),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderSide:
+                    const BorderSide(color: Colors.redAccent, width: 2.0),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
               ),
               const SizedBox(height: 30),
 

@@ -1,8 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:school_forum/Authentication/toggleAuth.dart';
+import 'package:school_forum/screens/home_screen.dart';
+import 'package:school_forum/screens/profile_page.dart';
+import 'package:school_forum/screens/setting_page.dart';
 import 'package:school_forum/screens/splash_screen.dart';
 
 import 'Theme/darkMode.dart';
+import 'components/notification_listener.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +40,10 @@ class MyApp extends StatelessWidget {
       ),
       darkTheme: darkMode,
       themeMode: ThemeMode.system,
-      home: SplashScreen(),
+
+      home: NotificationListenerWidget(
+        child: HomeScreen(),
+      ),
     );
   }
 }
