@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationListenerWidget extends StatefulWidget {
   final Widget child;
@@ -20,7 +21,23 @@ class _NotificationListenerWidgetState extends State<NotificationListenerWidget>
   @override
   void initState() {
     super.initState();
+    loadShownNotificationIds().then((_) {
+      listenToNotifications();
+    });
+  }
 
+  Future<void> loadShownNotificationIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    _shownNotificationIds = prefs.getStringList('shownNotificationIds')?.toSet() ?? {};
+  }
+
+  Future<void> saveShownNotificationId(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    _shownNotificationIds.add(id);
+    await prefs.setStringList('shownNotificationIds', _shownNotificationIds.toList());
+  }
+
+  void listenToNotifications() {
     if (currentUser != null) {
       _subscription = FirebaseFirestore.instance
           .collection("users")
@@ -33,22 +50,23 @@ class _NotificationListenerWidgetState extends State<NotificationListenerWidget>
           if (change.type == DocumentChangeType.added) {
             final notifId = change.doc.id;
             if (!_shownNotificationIds.contains(notifId)) {
-              _shownNotificationIds.add(notifId);
-
               final notifData = change.doc.data();
               if (notifData != null) {
                 final message = notifData['message'] ?? "You have a new notification";
 
-                // Show SnackBar
+
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(message),
-                      duration: const Duration(seconds: 3),
+                      duration: const Duration(seconds: 2),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
                 }
+
+                // Save this ID as shown
+                saveShownNotificationId(notifId);
               }
             }
           }

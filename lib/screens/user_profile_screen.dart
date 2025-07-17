@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:flutter/material.dart';
+import 'package:school_forum/screens/chat_next_screen.dart';
 import '../posts/post.dart';
 import '../helper/helper.dart';
 
@@ -38,20 +38,36 @@ class _UserProfilePageState extends State<UserProfilePage> {
         });
       } else {
         setState(() {
+          userData = null;
           isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
+        userData = null;
         isLoading = false;
       });
     }
   }
 
+  ImageProvider? _buildAvatarImage(String? avatarField) {
+    if (avatarField == null || avatarField.isEmpty) return null;
+
+    if (avatarField.startsWith("http")) {
+      return NetworkImage(avatarField);
+    }
+
+    try {
+      return MemoryImage(base64Decode(avatarField));
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final mainColor = const Color(0xFF0C6F8B);
-    final lighterColor = const Color(0xFF3AA0C9);
+    const Color mainColor = Color(0xFF0C6F8B);
+    const Color lighterColor = Color(0xFF3AA0C9);
 
     if (isLoading) {
       return const Scaffold(
@@ -66,8 +82,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
       );
     }
 
-    final photoUrl = userData!['photoUrl'] ??
-        'https://www.gravatar.com/avatar/placeholder';
+    final avatarField = userData!['avatar_base64'] ?? userData!['photoUrl'] ?? '';
+    final avatarImage = _buildAvatarImage(avatarField);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -76,13 +92,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
           // Header
           Container(
             width: double.infinity,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [mainColor, lighterColor],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(35),
                 bottomRight: Radius.circular(35),
               ),
@@ -107,10 +123,30 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(width: 40), // Spacer
+                    IconButton(
+                      icon: const Icon(Icons.message, color: Colors.white),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChatNextScreen(
+                              selectedUser: {
+                                'uid': widget.userId,
+                                'username': userData!['username'] ?? 'Unknown',
+                                'avatar_base64': avatarField,
+                                'state': userData!['state'] ?? 'offline',
+                                'last_seen': userData!['last_seen'],
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
+
+                // Avatar + Info
                 Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -118,7 +154,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       CircleAvatar(
                         radius: 42,
                         backgroundColor: Colors.white,
-                        backgroundImage: NetworkImage(photoUrl),
+                        backgroundImage: avatarImage ??
+                            const NetworkImage("https://www.gravatar.com/avatar/placeholder"),
                       ),
                       const SizedBox(width: 30),
                       Column(
@@ -128,7 +165,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                             userData!['username'] ?? 'No Name',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 25,
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -137,8 +174,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                             'UCSTT ${userData!['rollNumber'] ?? "N/A"} | ${userData!['year'] ?? "Year Unknown"}',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontWeight: FontWeight.bold,
                               fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
@@ -150,7 +187,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
             ),
           ),
 
-          const SizedBox(height: 30),
+          const SizedBox(height: 10),
 
           // Posts
           Expanded(
@@ -167,10 +204,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
                 final docs = snapshot.data!.docs;
                 if (docs.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Text("No posts found."),
-                  );
+                  return const Center(child: Text("No posts found."));
                 }
 
                 return ListView.builder(

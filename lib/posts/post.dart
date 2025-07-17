@@ -1,7 +1,7 @@
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import '../screens/user_profile_screen.dart';
 
 class Post extends StatefulWidget {
@@ -10,7 +10,7 @@ class Post extends StatefulWidget {
   final String postId;
   final String time;
   final List<String> likes;
-  final String postOwnerId; //  MUST be passed when creating Post widget
+  final String postOwnerId;
 
   const Post({
     super.key,
@@ -28,6 +28,7 @@ class Post extends StatefulWidget {
 
 class _PostState extends State<Post> {
   String? username;
+  String? avatarBase64;
   final currentUser = FirebaseAuth.instance.currentUser!;
   final TextEditingController _commentTextController = TextEditingController();
   late bool isLiked;
@@ -40,74 +41,85 @@ class _PostState extends State<Post> {
   void initState() {
     super.initState();
     fetchUsername();
+    fetchAvatar();
     isLiked = widget.likes.contains(currentUser.email);
     likeCount = widget.likes.length;
   }
 
-  ///  Fetch current user's username for comments
   Future<void> fetchUsername() async {
-    if (currentUser != null) {
-      final doc = await FirebaseFirestore.instance
-          .collection("users")
-          .doc(currentUser.uid)
-          .get();
+    final doc = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(currentUser.uid)
+        .get();
 
-      if (doc.exists && doc.data() != null) {
-        setState(() {
-          username = doc['username'] ?? "Unknown";
-        });
-      }
+    if (doc.exists) {
+      setState(() {
+        username = doc['username'] ?? 'Unknown';
+      });
     }
   }
 
-  /// Create Notification function
+  Future<void> fetchAvatar() async {
+    final doc = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(widget.postOwnerId)
+        .get();
+
+    if (doc.exists) {
+      setState(() {
+        avatarBase64 = doc['avatar_base64'] ?? doc['photoUrl'] ?? '';
+      });
+    }
+  }
+
+  ImageProvider resolveAvatar(String? avatar) {
+    if (avatar == null || avatar.isEmpty) {
+      return const NetworkImage("https://www.gravatar.com/avatar/placeholder");
+    }
+    if (avatar.startsWith("http")) {
+      return NetworkImage(avatar);
+    }
+    try {
+      return MemoryImage(base64Decode(avatar));
+    } catch (_) {
+      return const NetworkImage("https://www.gravatar.com/avatar/placeholder");
+    }
+  }
+
   Future<void> createNotification({
     required String toUserId,
     required String type,
     required String fromUserEmail,
     required String postId,
   }) async {
-    try {
-      print("Attempting to add notification for user $toUserId");
-      await FirebaseFirestore.instance
-          .collection("users")
-          .doc(toUserId)
-          .collection("notifications")
-          .add({
-        "type": type,
-        "postId": postId,
-        "fromUser": fromUserEmail,
-        "message": type == "like"
-            ? "$fromUserEmail liked your post"
-            : "$fromUserEmail commented on your post",
-        "timestamp": FieldValue.serverTimestamp(),
-      });
-      print("Notification added successfully!");
-    } catch (e, stack) {
-      print("Error adding notification: $e");
-      print(stack);
-    }
+    await FirebaseFirestore.instance
+        .collection("users")
+        .doc(toUserId)
+        .collection("notifications")
+        .add({
+      "type": type,
+      "postId": postId,
+      "fromUser": fromUserEmail,
+      "message": type == "like"
+          ? "$fromUserEmail liked your post"
+          : "$fromUserEmail commented on your post",
+      "timestamp": FieldValue.serverTimestamp(),
+    });
   }
 
-
-  ///  Toggle like
   void toggleLike() async {
     setState(() {
       isLiked = !isLiked;
       isLiked ? likeCount++ : likeCount--;
     });
 
-    DocumentReference postRef =
-    FirebaseFirestore.instance.collection('User_Posts').doc(widget.postId);
+    final postRef = FirebaseFirestore.instance.collection('User_Posts').doc(widget.postId);
 
     if (isLiked) {
       await postRef.update({
         'Likes': FieldValue.arrayUnion([currentUser.email])
       });
 
-      print(" Post LIKED by ${currentUser.email} for owner: ${widget.postOwnerId}");
-
-      // Send notification only if liking someone else's post
       if (widget.postOwnerId != currentUser.uid) {
         await createNotification(
           toUserId: widget.postOwnerId,
@@ -115,18 +127,14 @@ class _PostState extends State<Post> {
           fromUserEmail: currentUser.email!,
           postId: widget.postId,
         );
-      } else {
-        print("Skipped notification (user liked their OWN post)");
       }
     } else {
       await postRef.update({
         'Likes': FieldValue.arrayRemove([currentUser.email])
       });
-      print(" Like REMOVED for post ${widget.postId}");
     }
   }
 
-  ///  Add Comment
   void addComment(String commentText) async {
     if (commentText.trim().isEmpty) return;
 
@@ -140,9 +148,6 @@ class _PostState extends State<Post> {
       "CommentTime": Timestamp.now(),
     });
 
-    print(" COMMENT added by ${currentUser.email} for owner: ${widget.postOwnerId}");
-
-    // Send notification if commenting on someone else's post
     if (widget.postOwnerId != currentUser.uid) {
       await createNotification(
         toUserId: widget.postOwnerId,
@@ -150,19 +155,14 @@ class _PostState extends State<Post> {
         fromUserEmail: currentUser.email!,
         postId: widget.postId,
       );
-    } else {
-      print("Skipped notification (user commented on OWN post)");
     }
   }
 
-  ///  Show comment dialog
   void showCommentDialog() {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         elevation: 16,
         child: Container(
           padding: const EdgeInsets.all(24),
@@ -179,10 +179,7 @@ class _PostState extends State<Post> {
             children: [
               const Text(
                 "Add Comment",
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -209,11 +206,7 @@ class _PostState extends State<Post> {
                       Navigator.pop(context);
                       _commentTextController.clear();
                     },
-                    child: const Text(
-                      "Cancel",
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
+                    child: const Text("Cancel", style: TextStyle(color: Colors.white)),
                   ),
                   const SizedBox(width: 16),
                   ElevatedButton(
@@ -229,8 +222,7 @@ class _PostState extends State<Post> {
                       Navigator.pop(context);
                       _commentTextController.clear();
                     },
-                    child: const Text("Post",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text("Post"),
                   ),
                 ],
               )
@@ -253,13 +245,11 @@ class _PostState extends State<Post> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ///  Post header with username + timestamp
+          /// Post Header
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               GestureDetector(
                 onTap: () {
-                  // Navigate to user profile
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -267,86 +257,87 @@ class _PostState extends State<Post> {
                     ),
                   );
                 },
-                child: Text(
-                  widget.user,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                child: CircleAvatar(
+                  radius: 25,
+                  backgroundImage: resolveAvatar(avatarBase64),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => UserProfilePage(userId: widget.postOwnerId),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    widget.user,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
                   ),
                 ),
               ),
               Text(
                 widget.time,
-                style: TextStyle(
-                  color: Colors.grey[700],
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 11, color: Colors.grey[700]),
               ),
             ],
           ),
 
-          const SizedBox(height: 10),
-
-          ///  Post message
-          Text(
-            widget.message,
-            style: TextStyle(fontSize: 18, color: Colors.grey[800]),
-          ),
-
           const SizedBox(height: 20),
 
-          /// Like & Comment buttons
-          Center(
-            child: Row(
-              children: [
-                Column(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        isLiked ? Icons.favorite : Icons.favorite_border,
-                        color: isLiked ? Colors.red : Colors.grey,
-                      ),
-                      onPressed: toggleLike,
-                    ),
-                    Text('$likeCount',
-                        style:
-                        const TextStyle(color: Colors.grey, fontSize: 12)),
-                  ],
-                ),
-                const SizedBox(width: 24),
-                Column(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.comment, color: Colors.grey),
-                      onPressed: showCommentDialog,
-                    ),
-                    const SizedBox(height: 2),
-                    StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('User_Posts')
-                          .doc(widget.postId)
-                          .collection('Comments')
-                          .snapshots(),
-                      builder: (context, snapshot) {
-                        int count = 0;
-                        if (snapshot.hasData) {
-                          count = snapshot.data!.docs.length;
-                        }
-                        return Text('$count',
-                            style: const TextStyle(
-                                color: Colors.grey, fontSize: 12));
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          /// Post Message
+          Text(
+            widget.message,
+            style: TextStyle(fontSize: 16, color: Colors.grey[800]),
           ),
 
-          const SizedBox(height: 5),
 
-          ///  Show recent comments
+          /// Like & Comment buttons
+          Row(
+            children: [
+              Column(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      isLiked ? Icons.favorite : Icons.favorite_border,
+                      color: isLiked ? Colors.red : Colors.grey,
+                    ),
+                    onPressed: toggleLike,
+                  ),
+                  Text('$likeCount', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                ],
+              ),
+              const SizedBox(width: 5),
+              Column(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.comment, color: Colors.grey),
+                    onPressed: showCommentDialog,
+                  ),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('User_Posts')
+                        .doc(widget.postId)
+                        .collection('Comments')
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      final count = snapshot.data?.docs.length ?? 0;
+                      return Text('$count', style: const TextStyle(fontSize: 12, color: Colors.grey));
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          /// Recent Comments
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection("User_Posts")
@@ -361,24 +352,25 @@ class _PostState extends State<Post> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 children: snapshot.data!.docs.map((doc) {
-                  final commentData = doc.data() as Map<String, dynamic>;
-                  final commentUser = commentData["CommentedBy"] ?? '';
-                  final commentText = commentData["CommentText"] ?? '';
-
+                  final comment = doc.data() as Map<String, dynamic>;
                   return Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: RichText(
                       text: TextSpan(
                         children: [
                           TextSpan(
-                            text: "$commentUser: ",
+                            text: "${comment['CommentedBy']}: ",
                             style: TextStyle(
-                                fontWeight: FontWeight.bold, color: mainColor),
+                                fontWeight: FontWeight.bold,
+                                color: mainColor,
+                                fontSize: 14),
                           ),
                           TextSpan(
-                            text: commentText,
-                            style:
-                            TextStyle(color: Colors.grey[700], height: 1.5),
+                            text: comment['CommentText'],
+                            style: TextStyle(
+                              color: Colors.grey[800],
+                              fontSize: 14,
+                            ),
                           ),
                         ],
                       ),
