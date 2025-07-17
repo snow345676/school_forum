@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:school_forum/screens/home_screen.dart';
 import 'package:school_forum/screens/setting_page.dart';
 import '../posts/post.dart';
@@ -22,8 +21,6 @@ class _ProfilePageState extends State<ProfilePage> {
   bool isLoading = true;
   String? error;
   final currentUser = FirebaseAuth.instance.currentUser;
-  final photoUrl = FirebaseAuth.instance.currentUser?.photoURL ??
-      'https://www.gravatar.com/avatar/placeholder';
 
   @override
   void initState() {
@@ -56,34 +53,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
       setState(() {
         userData = doc.data();
+        avatarBase64 = userData!['avatar_base64'];
         isLoading = false;
       });
     } catch (e) {
       setState(() {
         error = "Failed to load user data: $e";
         isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _updateProfile() async {
-    try {
-      await FirebaseFirestore.instance.collection('users').doc(currentUser!.uid).update({
-        'avatar_base64': avatarBase64 ?? '',
-      });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated')));
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Update failed: $e')));
-    }
-  }
-
-  Future<void> _pickNewAvatar() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      final bytes = await picked.readAsBytes();
-      setState(() {
-        avatarBase64 = base64Encode(bytes);
       });
     }
   }
@@ -97,7 +73,6 @@ class _ProfilePageState extends State<ProfilePage> {
       } catch (_) {}
     }
 
-
     final Color mainColor = const Color(0xFF0C6F8B);
     final Color lighterColor = const Color(0xFF3AA0C9);
 
@@ -109,7 +84,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Profile', style: TextStyle(fontSize: 20))),
+        appBar: AppBar(title: const Text('Profile')),
         body: Center(child: Text(error!)),
       );
     }
@@ -173,29 +148,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 20),
-
-
                 Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-
-                      // Profile Picture
                       CircleAvatar(
                         radius: 42,
                         backgroundColor: Colors.white,
-                        backgroundImage: avatarImage,
+                        backgroundImage: avatarImage
                       ),
-
                       const SizedBox(width: 30),
-
-                      // Username info
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-
                           Text(
                             userData!['username'] ?? 'No Name',
                             style: const TextStyle(
@@ -215,16 +181,12 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ],
                       ),
-
-
                     ],
                   ),
                 ),
               ],
             ),
           ),
-
-
 
           const SizedBox(height: 10),
 

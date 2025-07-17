@@ -1,3 +1,4 @@
+import 'dart:convert'; // for base64Decode
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -14,9 +15,16 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
   final myId = FirebaseAuth.instance.currentUser!.uid;
   final TextEditingController chatController = TextEditingController();
 
-  String getLastseenText(Timestamp? lastSeen) {
-    if (lastSeen == null) return "Last Seen Recently";
-    final lastSeenDate = lastSeen.toDate();
+  /// Helper: detect if a string is a URL
+  bool _isValidImageUrl(String value) {
+    return value.startsWith("http");
+  }
+
+  /// Get last seen text
+  String getLastseenText(dynamic lastSeenRaw) {
+    if (lastSeenRaw == null) return "Last Seen Recently";
+    if (lastSeenRaw is! Timestamp) return "Last Seen Recently";
+    final lastSeenDate = lastSeenRaw.toDate();
     final now = DateTime.now();
     final diff = now.difference(lastSeenDate);
     if (diff.inMinutes < 1) return "Last Seen Recently";
@@ -25,6 +33,7 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
     return "Last Seen ${diff.inDays} days ago";
   }
 
+  /// Chat bubble or image
   Widget buildTextCard(String text, bool isMe) {
     return text.startsWith('http')
         ? Padding(
@@ -35,14 +44,46 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
       ),
     )
         : Container(
-      margin: EdgeInsets.symmetric(vertical: 4),
-      padding: EdgeInsets.all(10),
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: isMe ? Colors.blue.shade100 : Colors.grey.shade200,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(text),
     );
+  }
+
+  /// Builds avatar based on URL/base64/empty
+  Widget _buildAvatar(String? avatarField, {double radius = 20}) {
+    if (avatarField == null || avatarField.isEmpty) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundImage:
+        const NetworkImage("https://sl.bing.net/b5Z2jTtlUKy"),
+      );
+    }
+
+    if (_isValidImageUrl(avatarField)) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundImage: NetworkImage(avatarField),
+      );
+    }
+
+    try {
+      return CircleAvatar(
+        radius: radius,
+        backgroundImage: MemoryImage(base64Decode(avatarField)),
+      );
+    } catch (e) {
+      print("Invalid base64, showing default");
+      return CircleAvatar(
+        radius: radius,
+        backgroundImage:
+        const NetworkImage("https://sl.bing.net/b5Z2jTtlUKy"),
+      );
+    }
   }
 
   @override
@@ -58,16 +99,17 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
         .collection("messages")
         .orderBy("timestamp", descending: true);
 
+    // Get avatar correctly
+    final avatarField = widget.selectedUser['avatar_base64'] ?? '';
+    print("Avatar for ${widget.selectedUser['username']}: $avatarField");
+
     return Scaffold(
       appBar: AppBar(
         title: ListTile(
           leading: Stack(
             alignment: Alignment.bottomRight,
             children: [
-              CircleAvatar(
-                backgroundImage:
-                NetworkImage(widget.selectedUser['avatarBase64'] ?? ''),
-              ),
+              _buildAvatar(avatarField, radius: 22),
               if (widget.selectedUser['state'] == 'online')
                 Container(
                   width: 12,
@@ -103,11 +145,7 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundImage:
-                          NetworkImage(widget.selectedUser['avatarBase64'] ?? ''),
-                        ),
+                        _buildAvatar(avatarField, radius: 50),
                         const SizedBox(height: 10),
                         Text(widget.selectedUser['username'] ?? "Unknown"),
                         const SizedBox(height: 10),
@@ -126,30 +164,31 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
 
                     return Padding(
                       padding: EdgeInsets.only(
-                        left: isMe ? 60 : 10,   // more space for  messages
-                        right: isMe ? 10 : 60,  // more space for other user messages
+                        left: isMe ? 60 : 10,
+                        right: isMe ? 10 : 60,
                         top: 4,
                         bottom: 4,
                       ),
                       child: Align(
-                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment:
+                        isMe ? Alignment.centerRight : Alignment.centerLeft,
                         child: buildTextCard(msg['text'] ?? '', isMe),
                       ),
                     );
                   },
                 );
-
               },
             ),
           ),
           SafeArea(
             child: Container(
               margin: const EdgeInsets.all(8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100, // light background
-                borderRadius: BorderRadius.circular(30), // rounded corners
-                border: Border.all(color: Colors.grey.shade300), // subtle border
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.grey.shade300),
               ),
               child: Row(
                 children: [
@@ -158,10 +197,10 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
                       controller: chatController,
                       decoration: const InputDecoration(
                         hintText: 'Type a message...',
-                        border: InputBorder.none, // remove default underline
+                        border: InputBorder.none,
                       ),
                       minLines: 1,
-                      maxLines: 4, // allow multiline
+                      maxLines: 4,
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -185,14 +224,14 @@ class _ChatNextScreenState extends State<ChatNextScreen> {
                     },
                     child: CircleAvatar(
                       backgroundColor: Colors.blue,
-                      child: const Icon(Icons.send, color: Colors.white, size: 18),
+                      child: const Icon(Icons.send,
+                          color: Colors.white, size: 18),
                     ),
                   ),
                 ],
               ),
             ),
           )
-
         ],
       ),
     );

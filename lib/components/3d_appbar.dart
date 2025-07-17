@@ -1,14 +1,16 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 
 class Custom3DAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onMenuPressed;
   final VoidCallback onProfilePressed;
+  final String? avatarBase64;
 
   const Custom3DAppBar({
     super.key,
     required this.onMenuPressed,
     required this.onProfilePressed,
+    this.avatarBase64,
   });
 
   @override
@@ -16,12 +18,20 @@ class Custom3DAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final photoUrl = FirebaseAuth.instance.currentUser?.photoURL ??
-        'https://www.gravatar.com/avatar/placeholder';
+    final Color mainColor = const Color(0xFF0C6F8B);
+    final Color lighterColor = const Color(0xFF3AA0C9);
+    final Color shadowColor = const Color(0xFF084A59);
 
-    final Color mainColor = const Color(0xFF0C6F8B);      // #0C6F8B
-    final Color lighterColor = const Color(0xFF3AA0C9);   // lighter blue
-    final Color shadowColor = const Color(0xFF084A59);    // shadow color
+    ImageProvider avatarImage;
+    if (avatarBase64 != null && avatarBase64!.isNotEmpty) {
+      try {
+        avatarImage = MemoryImage(base64Decode(avatarBase64!));
+      } catch (_) {
+        avatarImage = const AssetImage('assets/default_avatar.png');
+      }
+    } else {
+      avatarImage = const AssetImage('assets/default_avatar.png');
+    }
 
     return Material(
       elevation: 5,
@@ -65,7 +75,7 @@ class Custom3DAppBar extends StatelessWidget implements PreferredSizeWidget {
                   child: CircleAvatar(
                     radius: 30,
                     backgroundColor: Colors.white,
-                    backgroundImage: NetworkImage(photoUrl),
+                    backgroundImage: avatarImage,
                   ),
                 ),
               ],

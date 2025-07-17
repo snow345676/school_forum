@@ -1,13 +1,16 @@
+import 'dart:convert';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:school_forum/Authentication/toggleAuth.dart';
-import 'package:school_forum/screens/notification.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:school_forum/screens/setting_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:school_forum/Authentication/toggleAuth.dart';
 import 'package:school_forum/screens/add_post_page.dart';
 import 'package:school_forum/screens/chat_screen.dart';
 import 'package:school_forum/screens/news_feed_page.dart';
+import 'package:school_forum/screens/notification.dart';
 import 'package:school_forum/screens/profile_page.dart';
 import '../Theme/darkMode.dart';
 import '../components/3d_appbar.dart';
@@ -25,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   String? userName;
   bool isLoading = true;
+  String? avatarBase64;
 
   final List<Widget> _pages = [
     const NewsFeedPage(),
@@ -37,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadSelectedTab();
-    fetchUserName();
+    fetchUserData();
   }
 
   Future<void> _loadSelectedTab() async {
@@ -51,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await FirebaseAuth.instance.signOut();
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => TogglePage()),
+      MaterialPageRoute(builder: (context) => const TogglePage()),
           (route) => false,
     );
   }
@@ -84,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await prefs.setInt('selectedTab', index);
   }
 
-  Future<void> fetchUserName() async {
+  Future<void> fetchUserData() async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return;
 
@@ -94,8 +98,10 @@ class _HomeScreenState extends State<HomeScreen> {
         .get();
 
     if (doc.exists) {
+      final data = doc.data();
       setState(() {
-        userName = doc.data()?['username'] ?? 'No Name';
+        userName = data?['username'] ?? 'No Name';
+        avatarBase64 = data?['avatar_base64'];
         isLoading = false;
       });
     } else {
@@ -108,6 +114,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Color mainColor = const Color(0xFF0C6F8B);
+    final Color lighterColor = const Color(0xFF3AA0C9);
+
+    ImageProvider? avatarImage;
+    if (avatarBase64 != null && avatarBase64!.isNotEmpty) {
+      try {
+        avatarImage = MemoryImage(base64Decode(avatarBase64!));
+      } catch (_) {
+
+      }
+    }
+
     if (isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -143,14 +161,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const CircleAvatar(
-                          radius: 40.0,
-                          backgroundImage: NetworkImage("https://sl.bing.net/dZztI9XLI6K"),
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundImage: avatarImage,
                         ),
                         const SizedBox(height: 15.0),
                         Text(
                           userName ?? "Loading...",
-                          style: const TextStyle(color: Colors.white, fontSize: 15.0),
+                          style: const TextStyle(color: Colors.white,fontWeight: FontWeight.bold, fontSize: 16.0),
                         ),
                       ],
                     ),
@@ -182,7 +200,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 title: const Text("Profile", style: TextStyle(color: Colors.white)),
                               ),
                               ListTile(
-                                onTap: () => Navigator.pop(context),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const SettingPage()),
+                                  );
+                                },
                                 leading: const Icon(Icons.settings, color: Colors.white),
                                 title: const Text("Settings", style: TextStyle(color: Colors.white)),
                               ),
@@ -252,12 +275,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             });
                           },
                           onProfilePressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const ProfilePage()),
-                            );
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
                           },
+                          avatarBase64: avatarBase64,
                         ),
+
                         body: IndexedStack(
                           index: _selectedIndex,
                           children: _pages,
