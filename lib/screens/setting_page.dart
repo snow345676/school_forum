@@ -80,7 +80,7 @@ class _SettingPageState extends State<SettingPage> {
           'avatar_base64': avatarBase64 ?? '',
         });
 
-        // Update all user posts with new username
+
         final postsSnapshot = await FirebaseFirestore.instance
             .collection('User_Posts')
             .where('uid', isEqualTo: currentUser!.uid)
@@ -129,7 +129,8 @@ class _SettingPageState extends State<SettingPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Settings"),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text("Settings",style: TextStyle(color: Colors.white),),
         backgroundColor: mainColor,
       ),
       body: isLoading

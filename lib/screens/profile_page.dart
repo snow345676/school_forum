@@ -222,14 +222,22 @@ class _ProfilePageState extends State<ProfilePage> {
                           final post = docs[index];
                           final data = post.data() as Map<String, dynamic>;
 
-                          return Post(
-                            message: data['Message'],
-                            user: data['username'] ?? 'Unknown',
-                            postId: post.id,
-                            likes: List<String>.from(data['Likes'] ?? []),
-                            time: formatDate(data['TimeStamp']),
-                            postOwnerId: post['uid'],
+                          return Stack(
+                            children: [
+                              Post(
+                                message: data['Message'],
+                                user: data['username'] ?? 'Unknown',
+                                postId: post.id,
+                                likes: List<String>.from(data['Likes'] ?? []),
+                                time: formatDate(data['TimeStamp']),
+                                postOwnerId: post['uid'],
+                              ),
+
+                            ],
                           );
+
+
+
                         },
                       );
                     },

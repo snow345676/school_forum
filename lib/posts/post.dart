@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../screens/user_profile_screen.dart';
 
@@ -27,14 +28,14 @@ class Post extends StatefulWidget {
 }
 
 class _PostState extends State<Post> {
+  final Color mainColor = const Color(0xFF0C6F8B);
+  final Color lighterColor = const Color(0xFF3AA0C9);
+  final Color shadowColor = const Color(0xFF084A59);
   String? avatarBase64;
   final currentUser = FirebaseAuth.instance.currentUser!;
   final TextEditingController _commentTextController = TextEditingController();
   late bool isLiked;
   late int likeCount;
-
-  final Color mainColor = const Color(0xFF0C6F8B);
-  final Color lighterColor = const Color(0xFF3AA0C9);
 
   @override
   void initState() {
@@ -71,7 +72,7 @@ class _PostState extends State<Post> {
     }
   }
 
-  /// Fetch logged-in user's info (username + avatar)
+
   Future<Map<String, String>> getCurrentUserInfo() async {
     final doc = await FirebaseFirestore.instance
         .collection("users")
@@ -85,18 +86,18 @@ class _PostState extends State<Post> {
     };
   }
 
-  /// Create notification with full sender info
+
   Future<void> createNotification({
     required String toUserId,
     required String type,
     required String postId,
   }) async {
-    // Get sender info ONCE
+
     final senderInfo = await getCurrentUserInfo();
     final senderName = senderInfo["username"]!;
     final senderAvatar = senderInfo["avatar"]!;
 
-    // Build notification message
+
     final message = type == "like"
         ? "liked your post"
         : "commented on your post";
@@ -116,7 +117,7 @@ class _PostState extends State<Post> {
     });
   }
 
-  ///  Like toggle + notification
+
   void toggleLike() async {
     setState(() {
       isLiked = !isLiked;
@@ -148,7 +149,7 @@ class _PostState extends State<Post> {
     }
   }
 
-  ///  Add comment + notification
+
   void addComment(String commentText) async {
     if (commentText.trim().isEmpty) return;
 
@@ -163,6 +164,7 @@ class _PostState extends State<Post> {
         .add({
       "CommentText": commentText,
       "CommentedBy": username,
+      "CommentedById": currentUser.uid,
       "CommentTime": Timestamp.now(),
     });
 
@@ -267,7 +269,7 @@ class _PostState extends State<Post> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ///  Post Header - live username update
+
           StreamBuilder<DocumentSnapshot>(
             stream: FirebaseFirestore.instance
                 .collection("users")
@@ -282,14 +284,15 @@ class _PostState extends State<Post> {
               }
 
               return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Avatar
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              UserProfilePage(userId: widget.postOwnerId),
+                          builder: (_) => UserProfilePage(userId: widget.postOwnerId),
                         ),
                       );
                     },
@@ -298,46 +301,87 @@ class _PostState extends State<Post> {
                       backgroundImage: resolveAvatar(avatarBase64),
                     ),
                   ),
+
                   const SizedBox(width: 10),
+
+                  // Username + Time
                   Expanded(
                     child: GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) =>
-                                UserProfilePage(userId: widget.postOwnerId),
+                            builder: (_) => UserProfilePage(userId: widget.postOwnerId),
                           ),
                         );
                       },
-                      child: Text(
-                        displayUsername,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayUsername,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.time,
+                            style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  Text(
-                    widget.time,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-                  ),
+
+                  if (widget.postOwnerId == currentUser.uid)
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.black45),
+                      onPressed: () async {
+                        final confirm = await showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text("Delete Post"),
+                            content: const Text("Are you sure you want to delete this post?"),
+                            actions: [
+                              TextButton(
+                                child: Text("Cancel",style: TextStyle(color: shadowColor),),
+                                onPressed: () => Navigator.of(context).pop(false),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+                                child: Text("Delete",style: TextStyle(color: shadowColor),),
+                                onPressed: () => Navigator.of(context).pop(true),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirm == true) {
+                          await FirebaseFirestore.instance
+                              .collection("User_Posts")
+                              .doc(widget.postId)
+                              .delete();
+                        }
+                      },
+                    ),
                 ],
               );
+
             },
           ),
 
           const SizedBox(height: 20),
 
-          ///  Post Message
+          //  Post Message
           Text(
             widget.message,
             style: TextStyle(fontSize: 18, color: Colors.grey[800]),
           ),
 
-          ///  Like & Comment buttons
+          //  Like & Comment buttons
           Row(
             children: [
               Column(
@@ -378,7 +422,8 @@ class _PostState extends State<Post> {
             ],
           ),
 
-          /// Recent Comments (live)
+          // Recent Comments (live)
+          // Recent Comments (live)
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection("User_Posts")
@@ -394,17 +439,33 @@ class _PostState extends State<Post> {
                 physics: const NeverScrollableScrollPhysics(),
                 children: snapshot.data!.docs.map((doc) {
                   final comment = doc.data() as Map<String, dynamic>;
+                  final commenterName = comment['CommentedBy'] ?? 'Unknown';
+                  final commenterId = comment['CommentedById'] ?? '';
+
                   return Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: RichText(
                       text: TextSpan(
                         children: [
                           TextSpan(
-                            text: "${comment['CommentedBy']}: ",
+                            text: "$commenterName: ",
                             style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: mainColor,
-                                fontSize: 14),
+                              fontWeight: FontWeight.bold,
+                              color: mainColor,
+                              fontSize: 14,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                if (commenterId.isNotEmpty) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          UserProfilePage(userId: commenterId),
+                                    ),
+                                  );
+                                }
+                              },
                           ),
                           TextSpan(
                             text: comment['CommentText'],
@@ -421,6 +482,7 @@ class _PostState extends State<Post> {
               );
             },
           ),
+
         ],
       ),
     );
