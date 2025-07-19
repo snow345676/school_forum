@@ -23,40 +23,42 @@ class HomeBottomNavBar extends StatelessWidget {
     final Color bshadowColor = const Color(0xFF084A59);
 
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [mainColor,middeleColor, lighterColor],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-
-      ),
-      // color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 12),
+    return SingleChildScrollView(
       child: Container(
         decoration: BoxDecoration(
-      gradient: LinearGradient(
-      colors: [mainColor,middeleColor, lighterColor],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      )),
-        child: GNav(
-          selectedIndex: selectedIndex,
-          onTabChange: onTabChange,
-          gap: 8,
-          tabBorderRadius: 16,
-
-          color: Colors.black54,
-          activeColor: bmainColor,
-          tabBackgroundColor: bmainColor.withOpacity(0.15),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          tabs: [
-            GButton(icon: Icons.home, text: 'Home',),
-            GButton(icon: Icons.chat_bubble, text: 'Chat'),
-            GButton(icon: Icons.add_box, text: 'Add Post'),
-            GButton(icon: Icons.notifications, text: 'Noti'),
-          ],
+          gradient: LinearGradient(
+            colors: [mainColor,middeleColor, lighterColor],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+      
+        ),
+        // color: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 12),
+        child: Container(
+          decoration: BoxDecoration(
+        gradient: LinearGradient(
+        colors: [mainColor,middeleColor, lighterColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        )),
+          child: GNav(
+            selectedIndex: selectedIndex,
+            onTabChange: onTabChange,
+            gap: 8,
+            tabBorderRadius: 16,
+      
+            color: Colors.black54,
+            activeColor: bmainColor,
+            tabBackgroundColor: bmainColor.withOpacity(0.15),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            tabs: [
+              GButton(icon: Icons.home, text: 'Home',),
+              GButton(icon: Icons.chat_bubble, text: 'Chat'),
+              GButton(icon: Icons.add_box, text: 'Post'),
+              GButton(icon: Icons.notifications, text: 'Noti'),
+            ],
+          ),
         ),
       ),
     );

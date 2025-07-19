@@ -1,9 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../Theme/darkMode.dart';
+import 'package:school_forum/Theme/lightMode.dart';
+
 
 class AddPostPage extends StatefulWidget {
+  final Color bmainColor = const Color(0xFF0C6F8B);
+  final Color blighterColor = const Color(0xFF3AA0C9);
+  final Color shadowColor = const Color(0xFF084A59);
   const AddPostPage({super.key});
 
   @override

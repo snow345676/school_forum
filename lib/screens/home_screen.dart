@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:school_forum/Theme/lightMode.dart';
 import 'package:school_forum/screens/setting_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:school_forum/Authentication/toggleAuth.dart';
@@ -12,11 +13,13 @@ import 'package:school_forum/screens/chat_screen.dart';
 import 'package:school_forum/screens/news_feed_page.dart';
 import 'package:school_forum/screens/notification.dart';
 import 'package:school_forum/screens/profile_page.dart';
-import '../Theme/darkMode.dart';
 import '../components/3d_appbar.dart';
 import '../components/home_button_nav.dart';
 
 class HomeScreen extends StatefulWidget {
+  final Color bmainColor = const Color(0xFF0C6F8B);
+  final Color blighterColor = const Color(0xFF3AA0C9);
+  final Color shadowColor = const Color(0xFF084A59);
   const HomeScreen({super.key});
 
   @override
@@ -114,8 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Color mainColor = const Color(0xFF0C6F8B);
-    final Color lighterColor = const Color(0xFF3AA0C9);
+
 
     ImageProvider? avatarImage;
     if (avatarBase64 != null && avatarBase64!.isNotEmpty) {

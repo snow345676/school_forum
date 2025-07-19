@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:school_forum/Theme/darkMode.dart';
 import 'chat_next_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -122,40 +121,42 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     lastMessage = msg['text'] ?? '';
                   }
 
-                  return ListTile(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatNextScreen(
-                            selectedUser: {
-                              ...data,
-                              "uid": otherId,
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                    leading: Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        _buildAvatar(avatarField),
-                        if (data['state'] == 'online')
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
+                  return SingleChildScrollView(
+                    child: ListTile(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatNextScreen(
+                              selectedUser: {
+                                ...data,
+                                "uid": otherId,
+                              },
                             ),
                           ),
-                      ],
+                        );
+                      },
+                      leading: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          _buildAvatar(avatarField),
+                          if (data['state'] == 'online')
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                            ),
+                        ],
+                      ),
+                      title: Text(data['username'] ?? 'Unknown'),
+                      subtitle: lastMessage.startsWith('http')
+                          ? Image.network(lastMessage, width: 20, height: 20)
+                          : Text(lastMessage),
                     ),
-                    title: Text(data['username'] ?? 'Unknown'),
-                    subtitle: lastMessage.startsWith('http')
-                        ? Image.network(lastMessage, width: 20, height: 20)
-                        : Text(lastMessage),
                   );
                 },
               );

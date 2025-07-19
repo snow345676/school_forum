@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -60,7 +59,7 @@ class _PostState extends State<Post> {
 
   ImageProvider resolveAvatar(String? avatar) {
     if (avatar == null || avatar.isEmpty) {
-      return const NetworkImage("https://www.gravatar.com/avatar/placeholder");
+      return const NetworkImage("https://via.placeholder.com/150");
     }
     if (avatar.startsWith("http")) {
       return NetworkImage(avatar);
@@ -68,16 +67,40 @@ class _PostState extends State<Post> {
     try {
       return MemoryImage(base64Decode(avatar));
     } catch (_) {
-      return const NetworkImage("https://www.gravatar.com/avatar/placeholder");
+      return const NetworkImage("https://via.placeholder.com/150");
     }
   }
 
+  /// Fetch logged-in user's info (username + avatar)
+  Future<Map<String, String>> getCurrentUserInfo() async {
+    final doc = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(currentUser.uid)
+        .get();
+
+    final data = doc.data() ?? {};
+    return {
+      "username": data["username"] ?? currentUser.email ?? "Unknown",
+      "avatar": data["photoUrl"] ?? data["avatar_base64"] ?? "",
+    };
+  }
+
+  /// Create notification with full sender info
   Future<void> createNotification({
     required String toUserId,
     required String type,
-    required String fromUserEmail,
     required String postId,
   }) async {
+    // Get sender info ONCE
+    final senderInfo = await getCurrentUserInfo();
+    final senderName = senderInfo["username"]!;
+    final senderAvatar = senderInfo["avatar"]!;
+
+    // Build notification message
+    final message = type == "like"
+        ? "liked your post"
+        : "commented on your post";
+
     await FirebaseFirestore.instance
         .collection("users")
         .doc(toUserId)
@@ -85,51 +108,54 @@ class _PostState extends State<Post> {
         .add({
       "type": type,
       "postId": postId,
-      "fromUser": fromUserEmail,
-      "message": type == "like"
-          ? "$fromUserEmail liked your post"
-          : "$fromUserEmail commented on your post",
+      "fromUserId": currentUser.uid,
+      "fromUserName": senderName,
+      "fromUserAvatar": senderAvatar,
+      "message": "$senderName $message",
       "timestamp": FieldValue.serverTimestamp(),
     });
   }
 
+  ///  Like toggle + notification
   void toggleLike() async {
     setState(() {
       isLiked = !isLiked;
       isLiked ? likeCount++ : likeCount--;
     });
 
-    final postRef = FirebaseFirestore.instance.collection('User_Posts').doc(widget.postId);
+    final postRef =
+    FirebaseFirestore.instance.collection('User_Posts').doc(widget.postId);
 
     if (isLiked) {
+      // Add like
       await postRef.update({
         'Likes': FieldValue.arrayUnion([currentUser.email])
       });
 
+      // Only notify if NOT liking your own post
       if (widget.postOwnerId != currentUser.uid) {
         await createNotification(
           toUserId: widget.postOwnerId,
           type: "like",
-          fromUserEmail: currentUser.email!,
           postId: widget.postId,
         );
       }
     } else {
+      // Remove like
       await postRef.update({
         'Likes': FieldValue.arrayRemove([currentUser.email])
       });
     }
   }
 
+  ///  Add comment + notification
   void addComment(String commentText) async {
     if (commentText.trim().isEmpty) return;
 
-    final userSnapshot = await FirebaseFirestore.instance
-        .collection("users")
-        .doc(currentUser.uid)
-        .get();
-    final username = userSnapshot.data()?['username'] ?? "Unknown";
+    final senderInfo = await getCurrentUserInfo();
+    final username = senderInfo["username"]!;
 
+    // Save comment
     await FirebaseFirestore.instance
         .collection("User_Posts")
         .doc(widget.postId)
@@ -140,11 +166,11 @@ class _PostState extends State<Post> {
       "CommentTime": Timestamp.now(),
     });
 
+    // Notify post owner if it's not your own post
     if (widget.postOwnerId != currentUser.uid) {
       await createNotification(
         toUserId: widget.postOwnerId,
         type: "comment",
-        fromUserEmail: currentUser.email!,
         postId: widget.postId,
       );
     }
@@ -171,7 +197,10 @@ class _PostState extends State<Post> {
             children: [
               const Text(
                 "Add Comment",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -198,7 +227,8 @@ class _PostState extends State<Post> {
                       Navigator.pop(context);
                       _commentTextController.clear();
                     },
-                    child: const Text("Cancel", style: TextStyle(color: Colors.white)),
+                    child: const Text("Cancel",
+                        style: TextStyle(color: Colors.white)),
                   ),
                   const SizedBox(width: 16),
                   ElevatedButton(
@@ -214,7 +244,7 @@ class _PostState extends State<Post> {
                       Navigator.pop(context);
                       _commentTextController.clear();
                     },
-                    child: const Text("Post"),
+                    child: const Text("Comment"),
                   ),
                 ],
               )
@@ -237,7 +267,7 @@ class _PostState extends State<Post> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// Post Header - with real-time username update
+          ///  Post Header - live username update
           StreamBuilder<DocumentSnapshot>(
             stream: FirebaseFirestore.instance
                 .collection("users")
@@ -258,7 +288,8 @@ class _PostState extends State<Post> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => UserProfilePage(userId: widget.postOwnerId),
+                          builder: (_) =>
+                              UserProfilePage(userId: widget.postOwnerId),
                         ),
                       );
                     },
@@ -274,7 +305,8 @@ class _PostState extends State<Post> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => UserProfilePage(userId: widget.postOwnerId),
+                            builder: (_) =>
+                                UserProfilePage(userId: widget.postOwnerId),
                           ),
                         );
                       },
@@ -299,13 +331,13 @@ class _PostState extends State<Post> {
 
           const SizedBox(height: 20),
 
-          /// Post Message
+          ///  Post Message
           Text(
             widget.message,
             style: TextStyle(fontSize: 18, color: Colors.grey[800]),
           ),
 
-          /// Like & Comment buttons
+          ///  Like & Comment buttons
           Row(
             children: [
               Column(
@@ -317,7 +349,8 @@ class _PostState extends State<Post> {
                     ),
                     onPressed: toggleLike,
                   ),
-                  Text('$likeCount', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text('$likeCount',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 ],
               ),
               const SizedBox(width: 5),
@@ -335,7 +368,9 @@ class _PostState extends State<Post> {
                         .snapshots(),
                     builder: (context, snapshot) {
                       final count = snapshot.data?.docs.length ?? 0;
-                      return Text('$count', style: const TextStyle(fontSize: 12, color: Colors.grey));
+                      return Text('$count',
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.grey));
                     },
                   ),
                 ],
@@ -343,7 +378,7 @@ class _PostState extends State<Post> {
             ],
           ),
 
-          /// Recent Comments
+          /// Recent Comments (live)
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection("User_Posts")

@@ -5,8 +5,6 @@ import 'package:school_forum/screens/home_screen.dart';
 import 'package:school_forum/screens/profile_page.dart';
 import 'package:school_forum/screens/setting_page.dart';
 import 'package:school_forum/screens/splash_screen.dart';
-
-import 'Theme/darkMode.dart';
 import 'components/notification_listener.dart';
 
 void main() async {
@@ -38,8 +36,6 @@ class MyApp extends StatelessWidget {
           color: shadowColor,
         ),
       ),
-      darkTheme: darkMode,
-      themeMode: ThemeMode.system,
 
       home:
         SplashScreen(),
